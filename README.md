@@ -1,6 +1,6 @@
 
 
-## [--> Download Here <--](github.com/hingjasontech/peluna/releases)
+## [--> Download Here <--](https://github.com/hingjasontech/peluna/releases)
 
 # Peluna
 Offline diary app. Which 
