@@ -17,3 +17,4 @@ Offline diary app. Which
 [MIT](./LICENSE)
 
 ## Gallery
+![Gallery](_gallery/gallery.png)
