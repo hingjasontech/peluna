@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Peluna is local-only: diaries must never leave the device through
+  cloud backup or device-to-device transfer. `android:allowBackup="false"`
+  covers cloud backup, but Android 12+ still allows D2D transfer, so the
+  app's files are explicitly excluded from both.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="." />
+    </device-transfer>
+</data-extraction-rules>

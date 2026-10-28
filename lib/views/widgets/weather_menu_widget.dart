@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:peluna/config/constant.dart';
 
@@ -24,14 +23,14 @@ class _WeatherMenuWidgetState extends State<WeatherMenuWidget> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Select Weather'),
+      title: const Text('Select Weather'),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(
           shrinkWrap: true,
           itemCount: Weather.weatherString.length,
           itemBuilder: (_, index) {
-            return RadioGroup(
+            return RadioGroup<String>(
               groupValue: _selectedWeather,
               onChanged: (value) {
                 setState(() {
@@ -54,9 +53,12 @@ class _WeatherMenuWidgetState extends State<WeatherMenuWidget> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
         TextButton(
-          onPressed: () => context.pop(_selectedWeather),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_selectedWeather),
           child: const Text('Save'),
         ),
       ],

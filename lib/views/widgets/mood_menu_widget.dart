@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/views/widgets/score_circle_widget.dart';
@@ -25,7 +24,7 @@ class _MoodMenuWidgetState extends State<MoodMenuWidget> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Select Mood'),
+      title: const Text('Select Mood'),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(
@@ -56,14 +55,14 @@ class _MoodMenuWidgetState extends State<MoodMenuWidget> {
       ),
       actions: [
         Row(
-          mainAxisAlignment: .end,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             TextButton(
-              onPressed: () => context.pop(),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => context.pop(_selectedMood),
+              onPressed: () => Navigator.of(context).pop(_selectedMood),
               child: const Text('Save'),
             ),
           ],

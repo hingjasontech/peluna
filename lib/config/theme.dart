@@ -8,10 +8,16 @@ abstract final class AppTheme {
   static final ThemeData light = ThemeData(
     brightness: Brightness.light,
     colorSchemeSeed: _seedColor,
+    appBarTheme: const AppBarTheme(
+      centerTitle: false,
+    ),
   );
 
   static final ThemeData dark = ThemeData(
     brightness: Brightness.dark,
     colorSchemeSeed: _seedColor,
+    appBarTheme: const AppBarTheme(
+      centerTitle: false,
+    ),
   );
 }
