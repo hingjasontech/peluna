@@ -317,30 +317,48 @@ Future<void> _loadSdkFonts() async {
     );
   }
 
-  final roboto = FontLoader('Roboto');
-  for (final name in const [
-    'roboto-regular.ttf',
-    'roboto-medium.ttf',
-    'roboto-bold.ttf',
-    'roboto-italic.ttf',
-  ]) {
-    final file = File('${fontsDir.path}${Platform.pathSeparator}$name');
-    if (file.existsSync()) {
-      final bytes = await file.readAsBytes();
-      roboto.addFont(Future.value(ByteData.sublistView(bytes)));
+  // SDK font file names differ by platform (lowercase on Windows, PascalCase
+  // on Linux/macOS), so match case-insensitively.
+  final files = fontsDir.listSync().whereType<File>().toList(growable: false);
+
+  File? find(String name) {
+    final lower = name.toLowerCase();
+    for (final file in files) {
+      if (file.uri.pathSegments.last.toLowerCase() == lower) return file;
     }
+    return null;
+  }
+
+  final robotoFiles = [
+    find('roboto-regular.ttf'),
+    find('roboto-medium.ttf'),
+    find('roboto-bold.ttf'),
+    find('roboto-italic.ttf'),
+  ].whereType<File>().toList();
+
+  if (robotoFiles.isEmpty) {
+    throw StateError(
+      'No Roboto fonts found in ${fontsDir.path}. '
+      'Found ${files.length} files instead.',
+    );
+  }
+
+  final roboto = FontLoader('Roboto');
+  for (final file in robotoFiles) {
+    final bytes = await file.readAsBytes();
+    roboto.addFont(Future.value(ByteData.sublistView(bytes)));
   }
   await roboto.load();
 
-  final iconFile = File(
-    '${fontsDir.path}${Platform.pathSeparator}materialicons-regular.otf',
-  );
-  if (iconFile.existsSync()) {
-    final icons = FontLoader('MaterialIcons');
-    final bytes = await iconFile.readAsBytes();
-    icons.addFont(Future.value(ByteData.sublistView(bytes)));
-    await icons.load();
+  final iconFile = find('materialicons-regular.otf');
+  if (iconFile == null) {
+    throw StateError('Material Icons font not found in ${fontsDir.path}.');
   }
+
+  final icons = FontLoader('MaterialIcons');
+  final bytes = await iconFile.readAsBytes();
+  icons.addFont(Future.value(ByteData.sublistView(bytes)));
+  await icons.load();
 }
 
 Directory? _findMaterialFontsDir() {
