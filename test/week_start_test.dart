@@ -30,9 +30,9 @@ void main() {
   });
 
   group('WeekStart', () {
-    test('falls back to Sunday for unknown or missing names', () {
-      expect(WeekStart.fromName(null), WeekStart.sunday);
-      expect(WeekStart.fromName('nonsense'), WeekStart.sunday);
+    test('falls back to Monday for unknown or missing names', () {
+      expect(WeekStart.fromName(null), WeekStart.monday);
+      expect(WeekStart.fromName('nonsense'), WeekStart.monday);
     });
 
     test('round-trips through its name', () {
@@ -43,8 +43,8 @@ void main() {
   });
 
   group('SettingsRepository.weekStart', () {
-    test('defaults to Sunday when nothing is stored', () {
-      expect(SettingsRepository(hive.settingsBox).weekStart, WeekStart.sunday);
+    test('defaults to Monday when nothing is stored', () {
+      expect(SettingsRepository(hive.settingsBox).weekStart, WeekStart.monday);
     });
 
     test('persists the chosen value', () async {
@@ -68,7 +68,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      expect(container.read(weekStartProvider), WeekStart.sunday);
+      expect(container.read(weekStartProvider), WeekStart.monday);
 
       container.read(weekStartProvider.notifier).select(WeekStart.saturday);
 
@@ -90,26 +90,30 @@ void main() {
       await tester.pump();
 
       // Default choice is shown on the tile.
-      expect(find.text('Sunday'), findsOneWidget);
+      expect(find.text('Monday'), findsOneWidget);
 
       await tester.tap(find.text('Start of Week'));
       await tester.pumpAndSettle();
 
       // All three options are offered.
       expect(find.text('Saturday'), findsOneWidget);
-      expect(find.text('Monday'), findsOneWidget);
+      expect(find.text('Sunday'), findsOneWidget);
+      // Monday appears both on the tile and in the open dialog.
+      expect(find.text('Monday'), findsNWidgets(2));
 
-      await tester.tap(find.text('Monday'));
+      await tester.tap(
+        find.widgetWithText(RadioListTile<WeekStart>, 'Sunday'),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Save'));
       await tester.pumpAndSettle();
 
-      expect(hive.settingsBox.get('week_start'), 'monday');
-      expect(find.text('Week starts on Monday'), findsOneWidget);
+      expect(hive.settingsBox.get('week_start'), 'sunday');
+      expect(find.text('Week starts on Sunday'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(ListTileWidget),
-          matching: find.text('Monday'),
+          matching: find.text('Sunday'),
         ),
         findsOneWidget,
       );
@@ -117,14 +121,14 @@ void main() {
   });
 
   group('HomePage calendar', () {
-    testWidgets('defaults to a Sunday start', (tester) async {
+    testWidgets('defaults to a Monday start', (tester) async {
       await tester.pumpWidget(hive.wrap(const MaterialApp(home: HomePage())));
       await tester.pump();
 
       final calendar = tester.widget<TableCalendar<Diary>>(
         find.byType(TableCalendar<Diary>),
       );
-      expect(calendar.startingDayOfWeek, StartingDayOfWeek.sunday);
+      expect(calendar.startingDayOfWeek, StartingDayOfWeek.monday);
     });
 
     testWidgets('uses the stored week start', (tester) async {

@@ -1,0 +1,150 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (for example, v1.0.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+          cache: true
+
+      - name: Validate tag and read version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PUBSPEC_VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1 | tr -d '\"')"
+          if [ -z "$PUBSPEC_VERSION" ]; then
+            echo "::error::No version found in pubspec.yaml"
+            exit 1
+          fi
+
+          VERSION_NAME="${PUBSPEC_VERSION%%+*}"
+          BUILD_NUMBER="${PUBSPEC_VERSION#*+}"
+
+          if [ "$BUILD_NUMBER" = "$PUBSPEC_VERSION" ]; then
+            echo "::error::pubspec.yaml version must include a build number, for example 1.0.1+2"
+            exit 1
+          fi
+
+          if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::error::Build number must be numeric, got: $BUILD_NUMBER"
+            exit 1
+          fi
+
+          if [ "$RELEASE_TAG" != "v$VERSION_NAME" ]; then
+            echo "::error::Tag $RELEASE_TAG does not match pubspec.yaml version $PUBSPEC_VERSION (expected v$VERSION_NAME)"
+            exit 1
+          fi
+
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      - name: Restore Android keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not configured"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release-keystore.p12
+
+      - name: Write Android signing properties
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::error::Android signing secrets are incomplete"
+            exit 1
+          fi
+
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=release-keystore.p12
+          storeType=PKCS12
+          EOF
+
+      - name: Verify Android keystore
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          keytool -list \
+            -keystore android/app/release-keystore.p12 \
+            -storetype PKCS12 \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" > /dev/null
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Prepare release asset
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/peluna-v${{ steps.version.outputs.name }}.apk"
+          cd dist
+          sha256sum "peluna-v${{ steps.version.outputs.name }}.apk" > "peluna-v${{ steps.version.outputs.name }}.apk.sha256"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Peluna v${{ steps.version.outputs.name }}
+          files: |
+            dist/peluna-v${{ steps.version.outputs.name }}.apk
+            dist/peluna-v${{ steps.version.outputs.name }}.apk.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true

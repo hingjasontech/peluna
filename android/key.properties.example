@@ -1,0 +1,9 @@
+# Copy this file to android/key.properties for a local release build.
+# The GitHub Actions workflow creates its own key.properties from repository secrets.
+#
+# storeFile is relative to android/app/.
+storePassword=change-me
+keyPassword=change-me
+keyAlias=peluna
+storeFile=release-keystore.p12
+storeType=PKCS12

@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
 android {
@@ -30,11 +39,41 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                val storeFilePath =
+                    keystoreProperties.getProperty("storeFile")
+                        ?: error("storeFile is missing from android/key.properties")
+                val keyAliasValue =
+                    keystoreProperties.getProperty("keyAlias")
+                        ?: error("keyAlias is missing from android/key.properties")
+                val storePasswordValue =
+                    keystoreProperties.getProperty("storePassword")
+                        ?: error("storePassword is missing from android/key.properties")
+                val keyPasswordValue =
+                    keystoreProperties.getProperty("keyPassword")
+                        ?: error("keyPassword is missing from android/key.properties")
+
+                storeFile = file(storeFilePath)
+                storePassword = storePasswordValue
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+                storeType = keystoreProperties.getProperty("storeType") ?: "jks"
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // CI uses android/key.properties and the release keystore. Without
+            // those files, fall back to the debug key so local builds still work.
+            signingConfig =
+                if (hasReleaseKeystore) {
+                    signingConfigs.getByName("release")
+                } else {
+                    signingConfigs.getByName("debug")
+                }
         }
     }
 }
