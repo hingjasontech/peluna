@@ -1,0 +1,56 @@
+name: Gallery
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "lib/**"
+      - "tool/generate_gallery.dart"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gallery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate gallery
+        run: flutter test --no-pub tool/generate_gallery.dart
+
+      - name: Commit refreshed gallery
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- _gallery/gallery.png; then
+            echo "Gallery is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add _gallery/gallery.png
+          git commit -m "chore(gallery): regenerate README gallery"
+          git push
