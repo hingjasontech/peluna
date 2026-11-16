@@ -9,8 +9,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:peluna/models/week_start.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
+import 'package:peluna/providers/update_providers.dart';
 import 'package:peluna/utils/utils.dart';
 import 'package:peluna/views/widgets/list_tile_widget.dart';
+import 'package:peluna/views/widgets/update_settings_section.dart';
 import 'package:peluna/views/widgets/week_start_menu_widget.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -19,6 +21,7 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekStart = ref.watch(weekStartProvider);
+    final supportsSelfUpdate = ref.watch(supportsSelfUpdateProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
@@ -53,6 +56,7 @@ class SettingsPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _importDiaries(context, ref),
               ),
+              if (supportsSelfUpdate) const UpdateSettingsSection(),
               ListTileWidget(
                 title: Text(
                   'Clear All Diary',

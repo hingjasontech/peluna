@@ -4,6 +4,7 @@ class ListTileWidget extends StatelessWidget {
   const ListTileWidget({
     super.key,
     required this.title,
+    this.subtitle,
     this.leading,
     this.trailing = const Icon(Icons.navigate_next_outlined),
     this.onTap,
@@ -11,6 +12,7 @@ class ListTileWidget extends StatelessWidget {
   });
 
   final Widget title;
+  final Widget? subtitle;
   final Widget? leading;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -22,6 +24,7 @@ class ListTileWidget extends StatelessWidget {
       minVerticalPadding: 16,
       tileColor: tileColor ?? Theme.of(context).colorScheme.surfaceContainer,
       title: title,
+      subtitle: subtitle,
       leading: leading,
       trailing: trailing,
       onTap: onTap,

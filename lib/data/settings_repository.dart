@@ -10,6 +10,7 @@ class SettingsRepository {
 
   static const String _showCalendarMoodKey = 'show_calendar_mood';
   static const String _weekStartKey = 'week_start';
+  static const String _autoCheckUpdatesKey = 'auto_check_updates';
 
   bool get showCalendarMood =>
       _box.get(_showCalendarMoodKey, defaultValue: true) as bool;
@@ -23,4 +24,11 @@ class SettingsRepository {
 
   Future<void> setWeekStart(WeekStart value) =>
       _box.put(_weekStartKey, value.name);
+
+  /// Whether the app should look for a newer GitHub release when it starts.
+  bool get autoCheckUpdates =>
+      _box.get(_autoCheckUpdatesKey, defaultValue: false) as bool;
+
+  Future<void> setAutoCheckUpdates(bool value) =>
+      _box.put(_autoCheckUpdatesKey, value);
 }
