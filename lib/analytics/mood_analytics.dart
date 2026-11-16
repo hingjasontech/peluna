@@ -1,0 +1,381 @@
+import 'package:peluna/config/constant.dart';
+import 'package:peluna/models/diary_model.dart';
+import 'package:peluna/models/week_start.dart';
+
+/// Primary number shown in the summary card.
+enum ScoreMetric { net, average }
+
+/// Ranges available in the analytics page.
+enum AnalyticsRangeType { lifetime, week, month, year, custom }
+
+/// Normalises a [DateTime] to a local, time-free calendar date.
+DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+/// Adds calendar days without relying on 24-hour durations, which break
+/// across daylight-saving transitions.
+DateTime addDays(DateTime date, int days) =>
+    DateTime(date.year, date.month, date.day + days);
+
+/// Number of calendar days in [start]..[end], both inclusive.
+int daysInclusive(DateTime start, DateTime end) {
+  if (end.isBefore(start)) return 0;
+  final from = DateTime.utc(start.year, start.month, start.day);
+  final to = DateTime.utc(end.year, end.month, end.day);
+  return to.difference(from).inDays + 1;
+}
+
+int _dayKey(DateTime date) =>
+    DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/
+    Duration.millisecondsPerDay;
+
+int _weekStartWeekday(WeekStart start) => switch (start) {
+  WeekStart.monday => DateTime.monday,
+  WeekStart.sunday => DateTime.sunday,
+  WeekStart.saturday => DateTime.saturday,
+};
+
+/// The first day of the calendar week containing [date].
+DateTime startOfWeek(DateTime date, WeekStart weekStart) {
+  final d = dateOnly(date);
+  final offset = (d.weekday - _weekStartWeekday(weekStart) + 7) % 7;
+  return addDays(d, -offset);
+}
+
+/// Diary entries indexed by calendar day, plus derived mood lookups.
+///
+/// Built once per diary revision so summaries and charts do not repeatedly
+/// walk the Hive box.
+class AnalyticsData {
+  AnalyticsData._(this._entriesByDay, this._moodsByDay, this.firstEntryDate);
+
+  factory AnalyticsData.fromDiaries(Iterable<Diary> diaries) {
+    final entries = <int, Diary>{};
+    final moods = <int, int>{};
+    DateTime? firstEntry;
+
+    for (final diary in diaries) {
+      final date = dateOnly(diary.date);
+      final key = _dayKey(date);
+      final existing = entries[key];
+      if (existing == null || dateOnly(existing.date).isBefore(date)) {
+        entries[key] = diary;
+      }
+      if (firstEntry == null || date.isBefore(firstEntry)) {
+        firstEntry = date;
+      }
+
+      final mood = diary.mood;
+      if (mood != null && Mood.getIndex(mood) != -1) {
+        moods[key] = mood;
+      }
+    }
+
+    return AnalyticsData._(entries, moods, firstEntry);
+  }
+
+  final Map<int, Diary> _entriesByDay;
+  final Map<int, int> _moodsByDay;
+
+  /// Earliest saved entry, including future-dated entries.
+  final DateTime? firstEntryDate;
+
+  bool get isEmpty => _entriesByDay.isEmpty;
+
+  int? moodFor(DateTime date) => _moodsByDay[_dayKey(dateOnly(date))];
+
+  Diary? diaryFor(DateTime date) => _entriesByDay[_dayKey(dateOnly(date))];
+
+  /// Earliest entry on or before [today], or null when everything is future.
+  DateTime? firstEntryOnOrBefore(DateTime today) {
+    final first = firstEntryDate;
+    if (first == null || first.isAfter(dateOnly(today))) return null;
+    return first;
+  }
+}
+
+/// Aggregated mood numbers for one inclusive date range.
+class MoodSummary {
+  const MoodSummary({
+    required this.start,
+    required this.end,
+    required this.totalDays,
+    required this.loggedDays,
+    required this.missingDays,
+    required this.netScore,
+    required this.average,
+    required this.positiveDays,
+    required this.distribution,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final int totalDays;
+  final int loggedDays;
+  final int missingDays;
+  final int netScore;
+
+  /// Mean over every day in the range. Missing days count as zero.
+  final double average;
+  final int positiveDays;
+
+  /// Count per mood value. Only days with a recorded mood are included.
+  final Map<int, int> distribution;
+
+  int countFor(int mood) => distribution[mood] ?? 0;
+}
+
+MoodSummary summarizeMoods(AnalyticsData data, DateTime start, DateTime end) {
+  final from = dateOnly(start);
+  final to = dateOnly(end);
+  final totalDays = daysInclusive(from, to);
+  final distribution = <int, int>{for (final mood in Mood.moodInt) mood: 0};
+
+  var net = 0;
+  var logged = 0;
+  var positive = 0;
+
+  for (var day = from; !day.isAfter(to); day = addDays(day, 1)) {
+    final mood = data.moodFor(day);
+    if (mood == null) continue;
+    net += mood;
+    logged++;
+    distribution[mood] = (distribution[mood] ?? 0) + 1;
+    if (mood > 0) positive++;
+  }
+
+  return MoodSummary(
+    start: from,
+    end: to,
+    totalDays: totalDays,
+    loggedDays: logged,
+    missingDays: totalDays - logged,
+    netScore: net,
+    average: totalDays == 0 ? 0 : net / totalDays,
+    positiveDays: positive,
+    distribution: Map.unmodifiable(distribution),
+  );
+}
+
+class CumulativePoint {
+  const CumulativePoint({
+    required this.date,
+    required this.cumulative,
+    required this.mood,
+  });
+
+  final DateTime date;
+  final int cumulative;
+  final int? mood;
+}
+
+/// Running net score for every day in the range, missing days included as 0.
+List<CumulativePoint> cumulativePoints(
+  AnalyticsData data,
+  DateTime start,
+  DateTime end,
+) {
+  final from = dateOnly(start);
+  final to = dateOnly(end);
+  if (to.isBefore(from)) return const [];
+
+  final points = <CumulativePoint>[];
+  var running = 0;
+  for (var day = from; !day.isAfter(to); day = addDays(day, 1)) {
+    final mood = data.moodFor(day);
+    if (mood != null) running += mood;
+    points.add(CumulativePoint(date: day, cumulative: running, mood: mood));
+  }
+  return List.unmodifiable(points);
+}
+
+/// A display period with its full bounds and the elapsed portion used for
+/// calculations. Future days stay visible in the calendar but never count.
+class AnalyticsPeriod {
+  const AnalyticsPeriod({
+    required this.type,
+    required this.start,
+    required this.end,
+    required this.effectiveEnd,
+  });
+
+  final AnalyticsRangeType type;
+  final DateTime start;
+
+  /// Full period end, used by the calendar.
+  final DateTime end;
+
+  /// Last day included in scores. Equals [end] for completed periods.
+  final DateTime effectiveEnd;
+
+  bool get isPartial => effectiveEnd.isBefore(end);
+  int get elapsedDays => daysInclusive(start, effectiveEnd);
+  int get totalDays => daysInclusive(start, end);
+
+  bool contains(DateTime date) {
+    final d = dateOnly(date);
+    return !d.isBefore(start) && !d.isAfter(end);
+  }
+}
+
+AnalyticsPeriod buildPeriod({
+  required AnalyticsRangeType type,
+  required DateTime anchor,
+  required DateTime today,
+  required WeekStart weekStart,
+  DateTime? firstEntry,
+  DateTime? customStart,
+  DateTime? customEnd,
+}) {
+  final todayOnly = dateOnly(today);
+
+  if (type == AnalyticsRangeType.lifetime) {
+    var start = dateOnly(firstEntry ?? todayOnly);
+    if (start.isAfter(todayOnly)) start = todayOnly;
+    return AnalyticsPeriod(
+      type: type,
+      start: start,
+      end: todayOnly,
+      effectiveEnd: todayOnly,
+    );
+  }
+
+  var safeAnchor = dateOnly(anchor);
+  if (safeAnchor.isAfter(todayOnly)) safeAnchor = todayOnly;
+
+  if (type == AnalyticsRangeType.custom) {
+    var from = dateOnly(customStart ?? safeAnchor);
+    var to = dateOnly(customEnd ?? safeAnchor);
+    if (to.isBefore(from)) {
+      final swap = from;
+      from = to;
+      to = swap;
+    }
+    if (to.isAfter(todayOnly)) to = todayOnly;
+    if (from.isAfter(to)) from = to;
+    return AnalyticsPeriod(type: type, start: from, end: to, effectiveEnd: to);
+  }
+
+  final DateTime start;
+  final DateTime end;
+  switch (type) {
+    case AnalyticsRangeType.lifetime:
+      throw StateError('Handled above');
+    case AnalyticsRangeType.week:
+      start = startOfWeek(safeAnchor, weekStart);
+      end = addDays(start, 6);
+    case AnalyticsRangeType.month:
+      start = DateTime(safeAnchor.year, safeAnchor.month, 1);
+      end = DateTime(safeAnchor.year, safeAnchor.month + 1, 0);
+    case AnalyticsRangeType.year:
+      start = DateTime(safeAnchor.year, 1, 1);
+      end = DateTime(safeAnchor.year, 12, 31);
+    case AnalyticsRangeType.custom:
+      throw StateError('Handled above');
+  }
+
+  return AnalyticsPeriod(
+    type: type,
+    start: start,
+    end: end,
+    effectiveEnd: end.isAfter(todayOnly) ? todayOnly : end,
+  );
+}
+
+bool canGoToNextPeriod(AnalyticsPeriod period, DateTime today) {
+  final todayOnly = dateOnly(today);
+  final DateTime nextStart;
+  switch (period.type) {
+    case AnalyticsRangeType.lifetime:
+      return false;
+    case AnalyticsRangeType.week:
+      nextStart = addDays(period.start, 7);
+    case AnalyticsRangeType.month:
+      nextStart = DateTime(period.start.year, period.start.month + 1, 1);
+    case AnalyticsRangeType.year:
+      nextStart = DateTime(period.start.year + 1, 1, 1);
+    case AnalyticsRangeType.custom:
+      return false;
+  }
+  return !nextStart.isAfter(todayOnly);
+}
+
+/// Lifetime range from the first saved entry through today, or null when the
+/// diary has no entry on or before today.
+AnalyticsPeriod? buildLifetimePeriod(AnalyticsData data, DateTime today) {
+  final todayOnly = dateOnly(today);
+  final first = data.firstEntryOnOrBefore(todayOnly);
+  if (first == null) return null;
+
+  return AnalyticsPeriod(
+    type: AnalyticsRangeType.lifetime,
+    start: first,
+    end: todayOnly,
+    effectiveEnd: todayOnly,
+  );
+}
+
+class MonthlyBucket {
+  const MonthlyBucket({required this.month, required this.summary});
+
+  /// First day of the calendar month.
+  final DateTime month;
+  final MoodSummary summary;
+}
+
+class PeriodAnalytics {
+  const PeriodAnalytics({
+    required this.period,
+    required this.summary,
+    required this.points,
+    required this.monthlyBuckets,
+  });
+
+  final AnalyticsPeriod period;
+  final MoodSummary summary;
+  final List<CumulativePoint> points;
+
+  /// Empty unless the range is long enough and short enough to read monthly.
+  final List<MonthlyBucket> monthlyBuckets;
+}
+
+PeriodAnalytics buildPeriodAnalytics(
+  AnalyticsData data,
+  AnalyticsPeriod period,
+) {
+  final summary = summarizeMoods(data, period.start, period.effectiveEnd);
+  final points = cumulativePoints(data, period.start, period.effectiveEnd);
+  final buckets = period.elapsedDays > 31 && period.elapsedDays <= 366
+      ? _monthlyBuckets(data, period.start, period.effectiveEnd)
+      : const <MonthlyBucket>[];
+
+  return PeriodAnalytics(
+    period: period,
+    summary: summary,
+    points: points,
+    monthlyBuckets: buckets,
+  );
+}
+
+List<MonthlyBucket> _monthlyBuckets(
+  AnalyticsData data,
+  DateTime start,
+  DateTime end,
+) {
+  final buckets = <MonthlyBucket>[];
+  var cursor = DateTime(start.year, start.month, 1);
+
+  while (!cursor.isAfter(end)) {
+    final monthEnd = DateTime(cursor.year, cursor.month + 1, 0);
+    final bucketStart = cursor.isBefore(start) ? start : cursor;
+    final bucketEnd = monthEnd.isAfter(end) ? end : monthEnd;
+    buckets.add(
+      MonthlyBucket(
+        month: cursor,
+        summary: summarizeMoods(data, bucketStart, bucketEnd),
+      ),
+    );
+    cursor = DateTime(cursor.year, cursor.month + 1, 1);
+  }
+
+  return List.unmodifiable(buckets);
+}

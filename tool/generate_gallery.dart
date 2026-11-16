@@ -145,6 +145,20 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
+      // Analytics: lifetime summary, then the month view.
+      router.go('/analytics');
+      await tester.pumpAndSettle();
+      await snap();
+
+      await tester.tap(find.text('Month'));
+      await tester.pumpAndSettle();
+      await snap();
+
+      // Analytics: calendar and mood mix below the fold.
+      await tester.drag(find.byType(ListView).first, const Offset(0, -760));
+      await tester.pumpAndSettle();
+      await snap();
+
       router.go('/');
       await tester.pumpAndSettle();
 
