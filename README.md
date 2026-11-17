@@ -4,7 +4,7 @@
 
 # Peluna
 
-Offline diary app. Which
+Offline, score-based diary app. Which
 - Local only.
 - No BS cloud.
 - No BS ads.

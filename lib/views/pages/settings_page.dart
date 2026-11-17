@@ -15,8 +15,8 @@ import 'package:peluna/views/widgets/settings_section.dart';
 import 'package:peluna/views/widgets/update_settings_section.dart';
 import 'package:peluna/views/widgets/week_start_menu_widget.dart';
 
-/// Identifies the mood visibility switch in widget tests.
-const Key showMoodOnCalendarSwitchKey = Key('show-moods-on-calendar-switch');
+/// Identifies the score visibility switch in widget tests.
+const Key showScoreOnCalendarSwitchKey = Key('show-scores-on-calendar-switch');
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -24,7 +24,7 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekStart = ref.watch(weekStartProvider);
-    final showMood = ref.watch(showCalendarMoodProvider);
+    final showScore = ref.watch(showCalendarScoreProvider);
     final supportsSelfUpdate = ref.watch(supportsSelfUpdateProvider);
 
     return Align(
@@ -56,19 +56,19 @@ class SettingsPage extends ConsumerWidget {
                       onTap: () => _pickWeekStart(context, ref),
                     ),
                     SettingsTile(
-                      title: 'Show Moods on Calendar',
+                      title: 'Show Scores on Calendar',
                       subtitle: 'Show scores on the calendar.',
                       icon: Icons.visibility_outlined,
                       trailing: Switch(
-                        key: showMoodOnCalendarSwitchKey,
-                        value: showMood,
+                        key: showScoreOnCalendarSwitchKey,
+                        value: showScore,
                         onChanged: (value) => ref
-                            .read(showCalendarMoodProvider.notifier)
+                            .read(showCalendarScoreProvider.notifier)
                             .setVisible(value),
                       ),
                       onTap: () => ref
-                          .read(showCalendarMoodProvider.notifier)
-                          .setVisible(!showMood),
+                          .read(showCalendarScoreProvider.notifier)
+                          .setVisible(!showScore),
                     ),
                   ],
                 ),

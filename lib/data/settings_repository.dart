@@ -8,15 +8,21 @@ class SettingsRepository {
 
   final Box _box;
 
-  static const String _showCalendarMoodKey = 'show_calendar_mood';
+  static const String _showCalendarScoreKey = 'show_calendar_score';
+  static const String _legacyShowCalendarMoodKey = 'show_calendar_mood';
   static const String _weekStartKey = 'week_start';
   static const String _autoCheckUpdatesKey = 'auto_check_updates';
 
-  bool get showCalendarMood =>
-      _box.get(_showCalendarMoodKey, defaultValue: true) as bool;
+  /// Defaults to true and falls back to the legacy `show_calendar_mood` key
+  /// so existing installs keep their calendar preference after the rename.
+  bool get showCalendarScore {
+    final value =
+        _box.get(_showCalendarScoreKey) ?? _box.get(_legacyShowCalendarMoodKey);
+    return value as bool? ?? true;
+  }
 
-  Future<void> setShowCalendarMood(bool value) =>
-      _box.put(_showCalendarMoodKey, value);
+  Future<void> setShowCalendarScore(bool value) =>
+      _box.put(_showCalendarScoreKey, value);
 
   /// The day the calendar week starts on, defaulting to [WeekStart.fallback].
   WeekStart get weekStart =>

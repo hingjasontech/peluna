@@ -84,10 +84,10 @@ void main() {
         screenshots.add(image!);
       }
 
-      // Home: calendar with moods and the selected day's diary card.
+      // Home: calendar with scores and the selected day's diary card.
       await snap();
 
-      // Home: mood circles hidden with the eye button.
+      // Home: score circles hidden with the eye button.
       await tester.tap(find.byIcon(Icons.visibility));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
@@ -106,8 +106,8 @@ void main() {
       await tester.pumpAndSettle();
       await snap();
 
-      // Mood picker.
-      await tester.tap(find.byIcon(Icons.mood));
+      // Score picker.
+      await tester.tap(find.byIcon(Icons.score));
       await tester.pumpAndSettle();
       await snap();
       await tester.tap(find.text('Cancel'));
@@ -156,7 +156,7 @@ void main() {
       await tester.pumpAndSettle();
       await snap();
 
-      // Analytics: calendar and mood mix below the fold.
+      // Analytics: calendar and score mix below the fold.
       await tester.drag(find.byType(ListView).first, const Offset(0, -760));
       await tester.pumpAndSettle();
       await snap();
@@ -196,51 +196,51 @@ void main() {
 }
 
 /// Seeds a seven-day diary streak ending today, with a believable mix of
-/// moods, weather, tags and entries.
+/// scores, weather, tags and entries.
 Future<void> _seedSampleData(Box<Diary> box) async {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
 
   const samples =
-      <({int mood, String weather, String text, List<String> tags})>[
+      <({int score, String weather, String text, List<String> tags})>[
         (
-          mood: 2,
+          score: 2,
           weather: 'Hot',
           text: 'Morning coffee on the balcony before starting the day.',
           tags: ['morning', 'coffee'],
         ),
         (
-          mood: 1,
+          score: 1,
           weather: 'Balanced',
           text: 'Steady progress at work and a brisk evening walk.',
           tags: ['work', 'walk'],
         ),
         (
-          mood: 0,
+          score: 0,
           weather: 'Cold',
           text: 'Rainy afternoon spent reading by the window.',
           tags: ['reading', 'rain'],
         ),
         (
-          mood: -1,
+          score: -1,
           weather: 'Cold',
           text: 'Long day of meetings. Ready for an early night.',
           tags: ['work', 'rest'],
         ),
         (
-          mood: 2,
+          score: 2,
           weather: 'Balanced',
           text: 'Great gym session and cooked dinner from scratch.',
           tags: ['workout', 'cooking'],
         ),
         (
-          mood: -2,
+          score: -2,
           weather: 'Hot',
           text: 'Felt completely burnt out today. Taking tomorrow slow.',
           tags: ['burnout', 'rest'],
         ),
         (
-          mood: 1,
+          score: 1,
           weather: 'Balanced',
           text: 'Cleaned up the desk and sketched out weekend plans.',
           tags: ['focus', 'flutter'],
@@ -248,14 +248,14 @@ Future<void> _seedSampleData(Box<Diary> box) async {
       ];
 
   // Consecutive days ending today, so the calendar reads as a streak instead
-  // of scattered mood circles.
+  // of scattered score circles.
   const streakLength = 7;
   for (var offset = streakLength - 1; offset >= 0; offset--) {
     final date = DateTime(today.year, today.month, today.day - offset);
     final sample = samples[offset % samples.length];
     await box.put(
       dateToString(date),
-      Diary(date, sample.text, sample.mood, sample.weather, sample.tags),
+      Diary(date, sample.text, sample.score, sample.weather, sample.tags),
     );
   }
 

@@ -15,14 +15,14 @@ class ScoreCircleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (index < 0 || index >= Mood.moodInt.length) {
+    if (index < 0 || index >= Score.values.length) {
       return const SizedBox.shrink();
     }
 
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Mood.moodColors[index],
+        color: Score.colors[index],
       ),
       width: size,
       height: size,
@@ -30,10 +30,11 @@ class ScoreCircleWidget extends StatelessWidget {
 
       // add a '+' prefix if > 0
       child: Text(
-        Mood.moodInt[index] > 0
-            ? '+${Mood.moodInt[index]}'
-            : '${Mood.moodInt[index]}',
-        style: textStyle ??
+        Score.values[index] > 0
+            ? '+${Score.values[index]}'
+            : '${Score.values[index]}',
+        style:
+            textStyle ??
             TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,

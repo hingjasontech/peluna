@@ -11,7 +11,7 @@ types:
         index: 0
       content:
         index: 1
-      mood:
+      score:
         index: 2
       weather:
         index: 3

@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/models/diary_model.dart';
 import 'package:peluna/views/pages/analytics_page.dart';
 import 'package:peluna/views/widgets/analytics/analytics_format.dart';
-import 'package:peluna/views/widgets/analytics/analytics_summary_card.dart';
-import 'package:peluna/views/widgets/analytics/cumulative_score_card.dart';
+import 'package:peluna/views/widgets/analytics/score_card.dart';
 
 import 'support/test_harness.dart';
 
-Diary _diary(DateTime date, int? mood, {String content = 'entry'}) {
-  return Diary(date, content, mood, null, null);
+Diary _diary(DateTime date, int? score, {String content = 'entry'}) {
+  return Diary(date, content, score, null, null);
 }
 
 void main() {
@@ -34,12 +33,12 @@ void main() {
   });
 
   group('score colors', () {
-    test('follows the five mood colors', () {
-      expect(moodScoreColor(2), Mood.moodColors[0]);
-      expect(moodScoreColor(1), Mood.moodColors[1]);
-      expect(moodScoreColor(0), Mood.moodColors[2]);
-      expect(moodScoreColor(-1), Mood.moodColors[3]);
-      expect(moodScoreColor(-2), Mood.moodColors[4]);
+    test('follows the five score colors', () {
+      expect(scoreColor(2), Score.colors[0]);
+      expect(scoreColor(1), Score.colors[1]);
+      expect(scoreColor(0), Score.colors[2]);
+      expect(scoreColor(-1), Score.colors[3]);
+      expect(scoreColor(-2), Score.colors[4]);
     });
   });
 
@@ -65,7 +64,7 @@ void main() {
       expect(analytics.summary.countFor(0), 0);
     });
 
-    test('starts at the first entry even when it has no mood', () {
+    test('starts at the first entry even when it has no score', () {
       final data = AnalyticsData.fromDiaries([
         _diary(DateTime(2025, 12, 30), null, content: 'first'),
         _diary(DateTime(2026, 1, 1), 2),
@@ -79,7 +78,7 @@ void main() {
       expect(analytics.summary.netScore, 2);
     });
 
-    test('ignores future entries and invalid moods', () {
+    test('ignores future entries and invalid scores', () {
       final data = AnalyticsData.fromDiaries([
         _diary(DateTime(2026, 1, 1), 1),
         _diary(DateTime(2026, 1, 10), 2),
@@ -115,7 +114,7 @@ void main() {
       );
 
       expect(points.map((point) => point.cumulative), [2, 2, 1]);
-      expect(points.map((point) => point.mood), [2, null, -1]);
+      expect(points.map((point) => point.score), [2, null, -1]);
     });
   });
 
@@ -267,28 +266,26 @@ void main() {
       );
       await tester.pump();
 
+      expect(find.byType(ScoreCard), findsOneWidget);
       expect(find.text('Lifetime'), findsOneWidget);
       expect(find.text('Score'), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byType(AnalyticsSummaryCard),
+          of: find.byType(ScoreCard),
           matching: find.text('Lifetime'),
         ),
         findsOneWidget,
       );
-      expect(find.text('Cumulative score'), findsOneWidget);
+      expect(find.text('Cumulative score'), findsNothing);
       expect(find.textContaining('per day'), findsNothing);
       expect(find.byTooltip('Previous period'), findsNothing);
 
       expect(find.text('0'), findsOneWidget);
       await tester.pump(const Duration(seconds: 1));
       final score = tester.widget<Text>(
-        find.descendant(
-          of: find.byType(AnalyticsSummaryCard),
-          matching: find.text('+2'),
-        ),
+        find.descendant(of: find.byType(ScoreCard), matching: find.text('+2')),
       );
-      expect(score.style?.color, Mood.moodColors[0]);
+      expect(score.style?.color, Score.colors[0]);
 
       await tester.tap(find.text('Lifetime'));
       await tester.pumpAndSettle();
@@ -296,10 +293,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('7D'), findsOneWidget);
-      expect(find.text('Mood calendar'), findsOneWidget);
+      expect(find.text('Score calendar'), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byType(CumulativeScoreCard),
+          of: find.byType(ScoreCard),
           matching: find.text('Awesome 1'),
         ),
         findsOneWidget,

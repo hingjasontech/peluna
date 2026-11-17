@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/diary_providers.dart';
 

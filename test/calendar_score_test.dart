@@ -33,7 +33,7 @@ void main() {
     expect(find.byType(TableCalendar<Diary>), findsOneWidget);
   });
 
-  testWidgets('renders ScoreCircleWidget on dates with mood', (tester) async {
+  testWidgets('renders ScoreCircleWidget on dates with score', (tester) async {
     final now = DateTime.now();
 
     await tester.runAsync(() async {
@@ -50,7 +50,7 @@ void main() {
   });
 
   testWidgets(
-    'dynamically updates calendar when diary entry with mood is added',
+    'dynamically updates calendar when diary entry with score is added',
     (tester) async {
       final now = DateTime.now();
 

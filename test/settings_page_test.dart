@@ -21,26 +21,40 @@ void main() {
     await hive.clear();
   });
 
-  testWidgets('mood visibility switch persists to settings', (tester) async {
+  testWidgets('score visibility reads the legacy settings key', (tester) async {
+    await hive.settingsBox.put('show_calendar_mood', false);
+
     await tester.pumpWidget(
       hive.wrap(const MaterialApp(home: Scaffold(body: SettingsPage()))),
     );
     await tester.pump();
 
-    final switchFinder = find.byKey(showMoodOnCalendarSwitchKey);
+    expect(
+      tester.widget<Switch>(find.byKey(showScoreOnCalendarSwitchKey)).value,
+      isFalse,
+    );
+  });
+
+  testWidgets('score visibility switch persists to settings', (tester) async {
+    await tester.pumpWidget(
+      hive.wrap(const MaterialApp(home: Scaffold(body: SettingsPage()))),
+    );
+    await tester.pump();
+
+    final switchFinder = find.byKey(showScoreOnCalendarSwitchKey);
     expect(tester.widget<Switch>(switchFinder).value, isTrue);
 
     await tester.tap(switchFinder);
     await tester.pump();
 
     expect(tester.widget<Switch>(switchFinder).value, isFalse);
-    expect(SettingsRepository(hive.settingsBox).showCalendarMood, isFalse);
+    expect(SettingsRepository(hive.settingsBox).showCalendarScore, isFalse);
 
     // The whole row toggles the setting, not just the switch.
-    await tester.tap(find.text('Show Moods on Calendar'));
+    await tester.tap(find.text('Show Scores on Calendar'));
     await tester.pump();
 
     expect(tester.widget<Switch>(switchFinder).value, isTrue);
-    expect(SettingsRepository(hive.settingsBox).showCalendarMood, isTrue);
+    expect(SettingsRepository(hive.settingsBox).showCalendarScore, isTrue);
   });
 }

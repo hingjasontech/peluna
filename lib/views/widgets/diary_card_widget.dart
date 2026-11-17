@@ -105,20 +105,21 @@ class DiaryCardWidget extends ConsumerWidget {
                     ),
                   ),
 
-                  if (currentDiary.mood != null || currentDiary.weather != null)
+                  if (currentDiary.score != null ||
+                      currentDiary.weather != null)
                     const Divider(),
 
                   Row(
                     spacing: 8,
                     children: [
-                      if (currentDiary.mood != null &&
-                          Mood.getIndex(currentDiary.mood!) != -1)
+                      if (currentDiary.score != null &&
+                          Score.getIndex(currentDiary.score!) != -1)
                         SizedBox(
                           width: 24,
                           height: 24,
                           child: FittedBox(
                             child: ScoreCircleWidget(
-                              index: Mood.getIndex(currentDiary.mood!),
+                              index: Score.getIndex(currentDiary.score!),
                             ),
                           ),
                         ),

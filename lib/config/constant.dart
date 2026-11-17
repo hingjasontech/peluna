@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-// Mood class object
-abstract final class Mood {
-  static const List<int> moodInt = [2, 1, 0, -1, -2];
-  static const List<String> moodString = [
+/// The five daily score values, with their labels, icons, and colors.
+abstract final class Score {
+  static const List<int> values = [2, 1, 0, -1, -2];
+  static const List<String> labels = [
     'Awesome',
     'Good',
     'Neutral',
     'Bad',
     'Awful',
   ];
-  static const List<IconData> moodIcon = [
+  static const List<IconData> icons = [
     Icons.sentiment_very_satisfied_outlined,
     Icons.sentiment_satisfied_outlined,
     Icons.sentiment_neutral_outlined,
@@ -18,7 +18,7 @@ abstract final class Mood {
     Icons.sentiment_very_dissatisfied_outlined,
   ];
 
-  static List<Color> moodColors = [
+  static List<Color> colors = [
     Colors.green[600]!,
     Colors.green[400]!,
     Colors.orange,
@@ -26,10 +26,8 @@ abstract final class Mood {
     Colors.red[600]!,
   ];
 
-  // helper function
-  static int getIndex(int mood) {
-    return moodInt.indexOf(mood);
-  }
+  /// Index of [score] in [values], or -1 when it is not a valid score.
+  static int getIndex(int score) => values.indexOf(score);
 }
 
 // Weather

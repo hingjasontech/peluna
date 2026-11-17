@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/models/week_start.dart';
 
@@ -46,13 +46,13 @@ const List<String> _weekdaysShort = [
 
 String signedInt(int value) => value > 0 ? '+$value' : '$value';
 
-/// Maps a net score to the same green/orange/red palette as moods.
-Color moodScoreColor(int score) {
-  if (score >= 2) return Mood.moodColors[0];
-  if (score > 0) return Mood.moodColors[1];
-  if (score <= -2) return Mood.moodColors[4];
-  if (score < 0) return Mood.moodColors[3];
-  return Mood.moodColors[2];
+/// Maps a net score to the same green/orange/red palette as scores.
+Color scoreColor(int score) {
+  if (score >= 2) return Score.colors[0];
+  if (score > 0) return Score.colors[1];
+  if (score <= -2) return Score.colors[4];
+  if (score < 0) return Score.colors[3];
+  return Score.colors[2];
 }
 
 String shortDate(DateTime date) =>

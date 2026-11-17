@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/models/week_start.dart';
 import 'package:peluna/views/widgets/analytics/analytics_format.dart';
 import 'package:peluna/views/widgets/score_circle_widget.dart';
 
-class MoodCalendarCard extends StatelessWidget {
-  const MoodCalendarCard({
+class ScoreCalendarCard extends StatelessWidget {
+  const ScoreCalendarCard({
     super.key,
     required this.data,
     required this.period,
@@ -43,7 +43,7 @@ class MoodCalendarCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mood calendar',
+              'Score calendar',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -89,9 +89,9 @@ class MoodCalendarCard extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
                 final date = addDays(period.start, dayOffset);
-                return _MoodDayCell(
+                return _ScoreDayCell(
                   date: date,
-                  mood: data.moodFor(date),
+                  score: data.scoreFor(date),
                   today: today,
                   onTap: () => onDayTap(date),
                 );
@@ -104,16 +104,16 @@ class MoodCalendarCard extends StatelessWidget {
   }
 }
 
-class _MoodDayCell extends StatelessWidget {
-  const _MoodDayCell({
+class _ScoreDayCell extends StatelessWidget {
+  const _ScoreDayCell({
     required this.date,
-    required this.mood,
+    required this.score,
     required this.today,
     required this.onTap,
   });
 
   final DateTime date;
-  final int? mood;
+  final int? score;
   final DateTime today;
   final VoidCallback onTap;
 
@@ -123,14 +123,14 @@ class _MoodDayCell extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isFuture = date.isAfter(today);
     final isToday = dateOnly(date) == dateOnly(today);
-    final moodIndex = mood == null ? -1 : Mood.getIndex(mood!);
+    final scoreIndex = score == null ? -1 : Score.getIndex(score!);
 
     final message = isFuture
         ? '${shortDate(date)} · not yet'
-        : mood == null
-        ? '${shortDate(date)} · no mood, counts as 0'
-        : '${shortDate(date)}: ${Mood.moodString[moodIndex]} '
-              '(${signedInt(mood!)})';
+        : score == null
+        ? '${shortDate(date)} · no score, counts as 0'
+        : '${shortDate(date)}: ${Score.labels[scoreIndex]} '
+              '(${signedInt(score!)})';
 
     Widget marker;
     if (isFuture) {
@@ -148,7 +148,7 @@ class _MoodDayCell extends StatelessWidget {
           ),
         ),
       );
-    } else if (mood == null) {
+    } else if (score == null) {
       marker = Container(
         width: 30,
         height: 30,
@@ -172,9 +172,9 @@ class _MoodDayCell extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: colorScheme.primary, width: 2),
               ),
-              child: ScoreCircleWidget(index: moodIndex, size: 28),
+              child: ScoreCircleWidget(index: scoreIndex, size: 28),
             )
-          : ScoreCircleWidget(index: moodIndex, size: 30);
+          : ScoreCircleWidget(index: scoreIndex, size: 30);
     }
 
     return Tooltip(

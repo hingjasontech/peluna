@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:peluna/views/widgets/app_bar_widget.dart';
-import 'package:peluna/views/widgets/mood_visibility_toggle.dart';
+import 'package:peluna/views/widgets/score_visibility_toggle.dart';
 import 'package:peluna/views/widgets/nav_bar_widget.dart';
 
 class AppbarNavbarScaffold extends StatelessWidget {
@@ -22,7 +22,7 @@ class AppbarNavbarScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBarWidget(
         title: Text(title),
-        actions: [if (index == 0) const MoodVisibilityToggle()],
+        actions: [if (index == 0) const ScoreVisibilityToggle()],
       ),
       bottomNavigationBar: NavbarWidget(navigationShell: navigationShell),
       body: navigationShell,

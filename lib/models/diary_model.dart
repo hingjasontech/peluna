@@ -1,17 +1,17 @@
 class Diary {
   final DateTime date;
   final String? content;
-  final int? mood;
+  final int? score;
   final String? weather;
   final List<String>? tags;
 
-  const Diary(this.date, this.content, this.mood, this.weather, this.tags);
+  const Diary(this.date, this.content, this.score, this.weather, this.tags);
 
   Map<String, dynamic> toJson() {
     return {
       'date': date.toIso8601String(),
       'content': content,
-      'mood': mood,
+      'score': score,
       'weather': weather,
       'tags': tags,
     };
@@ -32,10 +32,13 @@ class Diary {
       throw const FormatException('Diary entry is missing a valid "date".');
     }
 
+    // Backups exported before the Mood → Score rename used `mood`.
+    final rawScore = json['score'] ?? json['mood'];
+
     return Diary(
       parsedDate,
       json['content'] as String?,
-      (json['mood'] as num?)?.toInt(),
+      (rawScore as num?)?.toInt(),
       json['weather'] as String?,
       (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
     );

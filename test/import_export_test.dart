@@ -33,7 +33,7 @@ void main() {
       final json = diary.toJson();
       expect(json['date'], date.toIso8601String());
       expect(json['content'], 'Had coffee');
-      expect(json['mood'], 2);
+      expect(json['score'], 2);
       expect(json['weather'], 'Hot');
       expect(json['tags'], ['work', 'morning']);
     });
@@ -42,7 +42,7 @@ void main() {
       final json = {
         'date': '2025-06-15T10:30:00.000',
         'content': 'Great day',
-        'mood': 1,
+        'score': 1,
         'weather': 'Balanced',
         'tags': ['exercise'],
       };
@@ -52,9 +52,22 @@ void main() {
       expect(diary.date.month, 6);
       expect(diary.date.day, 15);
       expect(diary.content, 'Great day');
-      expect(diary.mood, 1);
+      expect(diary.score, 1);
       expect(diary.weather, 'Balanced');
       expect(diary.tags, ['exercise']);
+    });
+
+    test('reads the legacy mood key from old backups', () {
+      final diary = Diary.fromJson({
+        'date': '2025-06-15T10:30:00.000',
+        'content': 'Old backup',
+        'mood': 2,
+        'weather': 'Hot',
+        'tags': ['legacy'],
+      });
+
+      expect(diary.score, 2);
+      expect(diary.weather, 'Hot');
     });
 
     test('deserialises epoch-millisecond date int', () {
@@ -62,7 +75,7 @@ void main() {
       final json = {
         'date': epoch,
         'content': null,
-        'mood': null,
+        'score': null,
         'weather': null,
         'tags': null,
       };
@@ -91,14 +104,14 @@ void main() {
       final json = {
         'date': '2025-03-10T00:00:00.000',
         'content': null,
-        'mood': null,
+        'score': null,
         'weather': null,
         'tags': null,
       };
 
       final diary = Diary.fromJson(json);
       expect(diary.content, isNull);
-      expect(diary.mood, isNull);
+      expect(diary.score, isNull);
       expect(diary.weather, isNull);
       expect(diary.tags, isNull);
     });
@@ -133,7 +146,7 @@ void main() {
         {
           'date': now.toIso8601String(),
           'content': 'Imported entry',
-          'mood': 2,
+          'score': 2,
           'weather': 'Hot',
           'tags': ['travel'],
         },
@@ -145,7 +158,7 @@ void main() {
       final saved = hive.repository.getByDate(now);
       expect(saved, isNotNull);
       expect(saved!.content, 'Imported entry');
-      expect(saved.mood, 2);
+      expect(saved.score, 2);
     });
 
     test('replaces existing diary with same date on import', () async {
@@ -157,7 +170,7 @@ void main() {
         {
           'date': date.toIso8601String(),
           'content': 'New content',
-          'mood': 1,
+          'score': 1,
           'weather': 'Balanced',
           'tags': [],
         },
@@ -167,7 +180,7 @@ void main() {
 
       final updated = hive.repository.getByDate(date);
       expect(updated!.content, 'New content');
-      expect(updated.mood, 1);
+      expect(updated.score, 1);
     });
 
     test('imports multiple entries from a single JSON string', () async {
@@ -183,7 +196,7 @@ void main() {
               (d) => {
                 'date': d.toIso8601String(),
                 'content': 'Entry',
-                'mood': 0,
+                'score': 0,
                 'weather': null,
                 'tags': null,
               },
@@ -234,7 +247,7 @@ void main() {
         final saved = hive.repository.getByDate(today);
         expect(saved, isNotNull);
         expect(saved!.content, 'Original');
-        expect(saved.mood, 1);
+        expect(saved.score, 1);
       },
     );
 
@@ -277,7 +290,7 @@ void main() {
 
       final imported1 = hive.repository.getByDate(d1);
       expect(imported1!.content, 'Independence Day');
-      expect(imported1.mood, 2);
+      expect(imported1.score, 2);
       expect(imported1.tags, ['holiday']);
 
       final imported2 = hive.repository.getByDate(d2);

@@ -21,6 +21,10 @@ CI pins Flutter 3.50.0 (Dart 3.14) and uses the committed lockfile. `flutter ana
 
 - Agents may add or remove any package from pub.dev when the task needs it. Prefer `flutter pub add <package>` / `flutter pub remove <package>` and commit both `pubspec.yaml` and `pubspec.lock`; CI installs with `--enforce-lockfile`.
 
+## Terminology
+
+- Peluna is a score-based diary: the daily `-2..2` rating is always called a **score**, never a mood. `Diary.score` is Hive field index `2`; do not change that index. Old backups and settings may still use the legacy `mood` / `show_calendar_mood` keys, which `Diary.fromJson` and `SettingsRepository` accept as fallbacks.
+
 ## Wiring
 
 - `lib/main.dart` opens the `diaries` and `settings` Hive boxes and overrides `diaryRepositoryProvider` / `settingsRepositoryProvider`. Those providers throw until overridden, so widget tests must use `HiveTestHarness` or provide equivalent overrides.

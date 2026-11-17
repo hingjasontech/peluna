@@ -88,8 +88,8 @@ class DiaryEditorNotifier extends Notifier<DiaryDraft> {
 
   void setContent(String value) => state = state.copyWith(content: value);
 
-  void setMood(int? mood) =>
-      state = state.copyWith(mood: mood, clearMood: mood == null);
+  void setScore(int? score) =>
+      state = state.copyWith(score: score, clearScore: score == null);
 
   void setWeather(String? weather) =>
       state = state.copyWith(weather: weather, clearWeather: weather == null);

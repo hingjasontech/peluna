@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/views/widgets/analytics/analytics_format.dart';
 
 class MonthlyScoreCard extends StatelessWidget {
@@ -28,7 +28,7 @@ class MonthlyScoreCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Net score per month, with days that have a mood.',
+              'Net score per month, with days that have a score.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

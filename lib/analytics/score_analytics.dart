@@ -33,16 +33,16 @@ int _dayKey(DateTime date) =>
     DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/
     Duration.millisecondsPerDay;
 
-/// Diary entries indexed by calendar day, plus derived mood lookups.
+/// Diary entries indexed by calendar day, plus derived score lookups.
 ///
 /// Built once per diary revision so summaries and charts do not repeatedly
 /// walk the Hive box.
 class AnalyticsData {
-  AnalyticsData._(this._entriesByDay, this._moodsByDay, this.firstEntryDate);
+  AnalyticsData._(this._entriesByDay, this._scoresByDay, this.firstEntryDate);
 
   factory AnalyticsData.fromDiaries(Iterable<Diary> diaries) {
     final entries = <int, Diary>{};
-    final moods = <int, int>{};
+    final scores = <int, int>{};
     DateTime? firstEntry;
 
     for (final diary in diaries) {
@@ -56,24 +56,24 @@ class AnalyticsData {
         firstEntry = date;
       }
 
-      final mood = diary.mood;
-      if (mood != null && Mood.getIndex(mood) != -1) {
-        moods[key] = mood;
+      final score = diary.score;
+      if (score != null && Score.getIndex(score) != -1) {
+        scores[key] = score;
       }
     }
 
-    return AnalyticsData._(entries, moods, firstEntry);
+    return AnalyticsData._(entries, scores, firstEntry);
   }
 
   final Map<int, Diary> _entriesByDay;
-  final Map<int, int> _moodsByDay;
+  final Map<int, int> _scoresByDay;
 
   /// Earliest saved entry, including future-dated entries.
   final DateTime? firstEntryDate;
 
   bool get isEmpty => _entriesByDay.isEmpty;
 
-  int? moodFor(DateTime date) => _moodsByDay[_dayKey(dateOnly(date))];
+  int? scoreFor(DateTime date) => _scoresByDay[_dayKey(dateOnly(date))];
 
   Diary? diaryFor(DateTime date) => _entriesByDay[_dayKey(dateOnly(date))];
 
@@ -85,9 +85,9 @@ class AnalyticsData {
   }
 }
 
-/// Aggregated mood numbers for one inclusive date range.
-class MoodSummary {
-  const MoodSummary({
+/// Aggregated score numbers for one inclusive date range.
+class ScoreSummary {
+  const ScoreSummary({
     required this.start,
     required this.end,
     required this.totalDays,
@@ -106,32 +106,32 @@ class MoodSummary {
   final int netScore;
   final int positiveDays;
 
-  /// Count per mood value. Only days with a recorded mood are included.
+  /// Count per score value. Only days with a recorded score are included.
   final Map<int, int> distribution;
 
-  int countFor(int mood) => distribution[mood] ?? 0;
+  int countFor(int score) => distribution[score] ?? 0;
 }
 
-MoodSummary summarizeMoods(AnalyticsData data, DateTime start, DateTime end) {
+ScoreSummary summarizeScores(AnalyticsData data, DateTime start, DateTime end) {
   final from = dateOnly(start);
   final to = dateOnly(end);
   final totalDays = daysInclusive(from, to);
-  final distribution = <int, int>{for (final mood in Mood.moodInt) mood: 0};
+  final distribution = <int, int>{for (final score in Score.values) score: 0};
 
   var net = 0;
   var logged = 0;
   var positive = 0;
 
   for (var day = from; !day.isAfter(to); day = addDays(day, 1)) {
-    final mood = data.moodFor(day);
-    if (mood == null) continue;
-    net += mood;
+    final score = data.scoreFor(day);
+    if (score == null) continue;
+    net += score;
     logged++;
-    distribution[mood] = (distribution[mood] ?? 0) + 1;
-    if (mood > 0) positive++;
+    distribution[score] = (distribution[score] ?? 0) + 1;
+    if (score > 0) positive++;
   }
 
-  return MoodSummary(
+  return ScoreSummary(
     start: from,
     end: to,
     totalDays: totalDays,
@@ -147,12 +147,12 @@ class CumulativePoint {
   const CumulativePoint({
     required this.date,
     required this.cumulative,
-    required this.mood,
+    required this.score,
   });
 
   final DateTime date;
   final int cumulative;
-  final int? mood;
+  final int? score;
 }
 
 /// Running net score for every day in the range, missing days included as 0.
@@ -168,9 +168,9 @@ List<CumulativePoint> cumulativePoints(
   final points = <CumulativePoint>[];
   var running = 0;
   for (var day = from; !day.isAfter(to); day = addDays(day, 1)) {
-    final mood = data.moodFor(day);
-    if (mood != null) running += mood;
-    points.add(CumulativePoint(date: day, cumulative: running, mood: mood));
+    final score = data.scoreFor(day);
+    if (score != null) running += score;
+    points.add(CumulativePoint(date: day, cumulative: running, score: score));
   }
   return List.unmodifiable(points);
 }
@@ -315,7 +315,7 @@ class MonthlyBucket {
 
   /// First day of the calendar month.
   final DateTime month;
-  final MoodSummary summary;
+  final ScoreSummary summary;
 }
 
 class PeriodAnalytics {
@@ -327,7 +327,7 @@ class PeriodAnalytics {
   });
 
   final AnalyticsPeriod period;
-  final MoodSummary summary;
+  final ScoreSummary summary;
   final List<CumulativePoint> points;
 
   /// Empty unless the range is long enough and short enough to read monthly.
@@ -338,7 +338,7 @@ PeriodAnalytics buildPeriodAnalytics(
   AnalyticsData data,
   AnalyticsPeriod period,
 ) {
-  final summary = summarizeMoods(data, period.start, period.effectiveEnd);
+  final summary = summarizeScores(data, period.start, period.effectiveEnd);
   final points = cumulativePoints(data, period.start, period.effectiveEnd);
   final buckets = period.elapsedDays > 31 && period.elapsedDays <= 366
       ? _monthlyBuckets(data, period.start, period.effectiveEnd)
@@ -367,7 +367,7 @@ List<MonthlyBucket> _monthlyBuckets(
     buckets.add(
       MonthlyBucket(
         month: cursor,
-        summary: summarizeMoods(data, bucketStart, bucketEnd),
+        summary: summarizeScores(data, bucketStart, bucketEnd),
       ),
     );
     cursor = DateTime(cursor.year, cursor.month + 1, 1);

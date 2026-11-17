@@ -10,7 +10,7 @@ import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/diary_providers.dart';
 import 'package:peluna/utils/utils.dart';
 import 'package:peluna/views/widgets/list_tags_widget.dart';
-import 'package:peluna/views/widgets/mood_menu_widget.dart';
+import 'package:peluna/views/widgets/score_menu_widget.dart';
 import 'package:peluna/views/widgets/score_circle_widget.dart';
 import 'package:peluna/views/widgets/weather_menu_widget.dart';
 
@@ -93,15 +93,15 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
     setState(() => _date = next);
   }
 
-  Future<void> _pickMood() async {
+  Future<void> _pickScore() async {
     final selected = await showDialog<int?>(
       context: context,
-      builder: (_) => MoodMenuWidget(
-        selectedMood: ref.read(diaryEditorProvider(_date)).mood,
+      builder: (_) => ScoreMenuWidget(
+        selectedScore: ref.read(diaryEditorProvider(_date)).score,
       ),
     );
     if (selected != null) {
-      _editor.setMood(selected);
+      _editor.setScore(selected);
     }
   }
 
@@ -158,9 +158,9 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
                       draft.weather!,
                     )],
                   ),
-                // Mood topbar
-                if (draft.mood != null)
-                  ScoreCircleWidget(index: Mood.moodInt.indexOf(draft.mood!)),
+                // Score topbar
+                if (draft.score != null)
+                  ScoreCircleWidget(index: Score.values.indexOf(draft.score!)),
               ],
             ),
           ],
@@ -192,18 +192,18 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
                 ),
               ),
 
-              // Actions bar: Mood, Weather, Tags & Save button
+              // Actions bar: Score, Weather, Tags & Save button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Mood & Weather & Tags buttons
+                  // Score & Weather & Tags buttons
                   Expanded(
                     child: Row(
                       children: [
                         IconButton(
-                          onPressed: _pickMood,
-                          icon: const Icon(Icons.mood),
-                          tooltip: 'Mood',
+                          onPressed: _pickScore,
+                          icon: const Icon(Icons.score),
+                          tooltip: 'Score',
                         ),
                         IconButton(
                           onPressed: _pickWeather,
@@ -392,12 +392,12 @@ class _DiaryDayEditorState extends ConsumerState<_DiaryDayEditor> {
 bool _hasChanges(DiaryDraft draft, Diary? existing) {
   if (existing == null) {
     return draft.content.isNotEmpty ||
-        draft.mood != null ||
+        draft.score != null ||
         draft.weather != null ||
         draft.tags.isNotEmpty;
   }
   return draft.content != (existing.content ?? '') ||
-      draft.mood != existing.mood ||
+      draft.score != existing.score ||
       draft.weather != existing.weather ||
       !listEquals(draft.tags, existing.tags ?? const <String>[]);
 }

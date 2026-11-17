@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/providers/analytics_providers.dart';
 import 'package:peluna/providers/diary_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
 import 'package:peluna/views/widgets/analytics/analytics_controls.dart';
-import 'package:peluna/views/widgets/analytics/analytics_summary_card.dart';
-import 'package:peluna/views/widgets/analytics/cumulative_score_card.dart';
 import 'package:peluna/views/widgets/analytics/monthly_score_card.dart';
-import 'package:peluna/views/widgets/analytics/mood_calendar_card.dart';
+import 'package:peluna/views/widgets/analytics/score_calendar_card.dart';
+import 'package:peluna/views/widgets/analytics/score_card.dart';
 
 class AnalyticsPage extends ConsumerWidget {
   const AnalyticsPage({super.key});
@@ -77,12 +76,10 @@ class _AnalyticsView extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AnalyticsSummaryCard(summary: summary, rangeSelector: rangeSelector),
-        const SizedBox(height: 16),
-        CumulativeScoreCard(
-          points: analytics.points,
+        ScoreCard(
           summary: summary,
-          title: 'Cumulative score',
+          points: analytics.points,
+          rangeSelector: rangeSelector,
         ),
         if (analytics.monthlyBuckets.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -90,7 +87,7 @@ class _AnalyticsView extends ConsumerWidget {
         ],
         if (period.totalDays <= 31) ...[
           const SizedBox(height: 16),
-          MoodCalendarCard(
+          ScoreCalendarCard(
             data: ref.watch(analyticsDataProvider),
             period: period,
             weekStart: weekStart,
@@ -130,7 +127,7 @@ class _EmptyAnalytics extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Every day after your first entry counts. Days without a mood '
+              'Every day after your first entry counts. Days without a score '
               'add 0, so the cumulative line never skips a day.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(

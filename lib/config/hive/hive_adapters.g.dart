@@ -34,7 +34,7 @@ class DiaryAdapter extends TypeAdapter<Diary> {
       ..writeByte(1)
       ..write(obj.content)
       ..writeByte(2)
-      ..write(obj.mood)
+      ..write(obj.score)
       ..writeByte(3)
       ..write(obj.weather)
       ..writeByte(4)

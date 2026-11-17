@@ -1,5 +1,5 @@
 name: peluna
-description: "Local diary app"
+description: "Local score-based diary app"
 publish_to: 'none'
 version: 1.2.0+4
 

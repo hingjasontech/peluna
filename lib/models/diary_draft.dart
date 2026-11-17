@@ -5,7 +5,7 @@ class DiaryDraft {
   const DiaryDraft({
     required this.date,
     this.content = '',
-    this.mood,
+    this.score,
     this.weather,
     this.tags = const <String>[],
   });
@@ -18,7 +18,7 @@ class DiaryDraft {
     return DiaryDraft(
       date: date,
       content: diary.content ?? '',
-      mood: diary.mood,
+      score: diary.score,
       weather: diary.weather,
       tags: List<String>.from(diary.tags ?? const <String>[]),
     );
@@ -26,26 +26,26 @@ class DiaryDraft {
 
   final DateTime date;
   final String content;
-  final int? mood;
+  final int? score;
   final String? weather;
   final List<String> tags;
 
   DiaryDraft copyWith({
     String? content,
-    int? mood,
+    int? score,
     String? weather,
     List<String>? tags,
-    bool clearMood = false,
+    bool clearScore = false,
     bool clearWeather = false,
   }) {
     return DiaryDraft(
       date: date,
       content: content ?? this.content,
-      mood: clearMood ? null : mood ?? this.mood,
+      score: clearScore ? null : score ?? this.score,
       weather: clearWeather ? null : weather ?? this.weather,
       tags: tags ?? this.tags,
     );
   }
 
-  Diary toDiary() => Diary(date, content, mood, weather, tags);
+  Diary toDiary() => Diary(date, content, score, weather, tags);
 }

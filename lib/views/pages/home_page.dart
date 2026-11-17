@@ -32,7 +32,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selectedDate = ref.watch(selectedDateProvider);
-    final showMood = ref.watch(showCalendarMoodProvider);
+    final showScore = ref.watch(showCalendarScoreProvider);
     final weekStart = ref.watch(weekStartProvider);
     final diaries = ref.watch(diaryRepositoryProvider);
 
@@ -121,17 +121,17 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               calendarBuilders: CalendarBuilders(
                 prioritizedBuilder: (context, day, focusedDay) {
-                  if (!showMood) {
+                  if (!showScore) {
                     return null;
                   }
 
                   final diary = diaries.getByDate(day);
-                  if (diary == null || diary.mood == null) {
+                  if (diary == null || diary.score == null) {
                     return null;
                   }
 
-                  final moodIndex = Mood.getIndex(diary.mood!);
-                  if (moodIndex < 0 || moodIndex >= Mood.moodInt.length) {
+                  final scoreIndex = Score.getIndex(diary.score!);
+                  if (scoreIndex < 0 || scoreIndex >= Score.values.length) {
                     return null;
                   }
 
@@ -140,7 +140,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   final isOutside = day.month != focusedDay.month;
 
                   Widget scoreCircle = ScoreCircleWidget(
-                    index: moodIndex,
+                    index: scoreIndex,
                     size: 32,
                   );
 
@@ -148,11 +148,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     scoreCircle = Opacity(opacity: 0.35, child: scoreCircle);
                   }
 
-                  final moodName = Mood.moodString[moodIndex];
-                  final scoreVal = Mood.moodInt[moodIndex];
+                  final scoreName = Score.labels[scoreIndex];
+                  final scoreVal = Score.values[scoreIndex];
                   final scoreLabel = scoreVal > 0 ? '+$scoreVal' : '$scoreVal';
                   final tooltipMessage =
-                      '${dateToString(day)}: $moodName ($scoreLabel)';
+                      '${dateToString(day)}: $scoreName ($scoreLabel)';
 
                   if (isSelected) {
                     return Center(

@@ -2,21 +2,22 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'package:peluna/analytics/mood_analytics.dart';
+import 'package:peluna/analytics/score_analytics.dart';
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/views/widgets/analytics/analytics_format.dart';
 
-class CumulativeScoreCard extends StatelessWidget {
-  const CumulativeScoreCard({
+/// The analytics overview: net score, cumulative chart, and score mix.
+class ScoreCard extends StatelessWidget {
+  const ScoreCard({
     super.key,
-    required this.points,
     required this.summary,
-    required this.title,
+    required this.points,
+    required this.rangeSelector,
   });
 
+  final ScoreSummary summary;
   final List<CumulativePoint> points;
-  final MoodSummary summary;
-  final String title;
+  final Widget rangeSelector;
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +37,57 @@ class CumulativeScoreCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Score',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                rangeSelector,
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: _AnimatedScore(
+                      // Restart the count from zero whenever the selected
+                      // period changes, even if the net score happens to be
+                      // the same.
+                      key: ValueKey(
+                        '${summary.start.millisecondsSinceEpoch}:'
+                        '${summary.end.millisecondsSinceEpoch}',
+                      ),
+                      value: summary.netScore,
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        color: scoreColor(summary.netScore),
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'points',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
             if (points.isEmpty)
               SizedBox(
                 height: 150,
@@ -68,9 +113,9 @@ class CumulativeScoreCard extends StatelessWidget {
                     child: CustomPaint(
                       painter: _CumulativeChartPainter(
                         points: points,
-                        positiveColor: Mood.moodColors[1],
-                        negativeColor: Mood.moodColors[3],
-                        neutralColor: Mood.moodColors[2],
+                        positiveColor: Score.colors[1],
+                        negativeColor: Score.colors[3],
+                        neutralColor: Score.colors[2],
                         gridColor: colorScheme.outlineVariant,
                         dotBorderColor: colorScheme.surfaceContainerHighest,
                         labelStyle: labelStyle,
@@ -93,12 +138,12 @@ class CumulativeScoreCard extends StatelessWidget {
                   height: 12,
                   child: Row(
                     children: [
-                      for (final mood in Mood.moodInt)
-                        if (summary.countFor(mood) > 0)
+                      for (final score in Score.values)
+                        if (summary.countFor(score) > 0)
                           Expanded(
-                            flex: summary.countFor(mood),
+                            flex: summary.countFor(score),
                             child: ColoredBox(
-                              color: Mood.moodColors[Mood.getIndex(mood)],
+                              color: Score.colors[Score.getIndex(score)],
                             ),
                           ),
                     ],
@@ -110,11 +155,11 @@ class CumulativeScoreCard extends StatelessWidget {
                 spacing: 14,
                 runSpacing: 8,
                 children: [
-                  for (var index = 0; index < Mood.moodInt.length; index++)
+                  for (var index = 0; index < Score.values.length; index++)
                     _LegendItem(
-                      color: Mood.moodColors[index],
-                      label: Mood.moodString[index],
-                      count: summary.countFor(Mood.moodInt[index]),
+                      color: Score.colors[index],
+                      label: Score.labels[index],
+                      count: summary.countFor(Score.values[index]),
                     ),
                 ],
               ),
@@ -128,7 +173,7 @@ class CumulativeScoreCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Add a mood to a diary entry to see the mix.',
+                  'Add a score to a diary entry to see the mix.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -139,7 +184,7 @@ class CumulativeScoreCard extends StatelessWidget {
               summary.missingDays > 0
                   ? '${summary.missingDays} missing '
                         '${summary.missingDays == 1 ? 'day counts' : 'days count'} as 0.'
-                  : 'Every day in this range has a mood.',
+                  : 'Every day in this range has a score.',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -183,6 +228,69 @@ class _LegendItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AnimatedScore extends StatefulWidget {
+  const _AnimatedScore({super.key, required this.value, required this.style});
+
+  final int value;
+  final TextStyle? style;
+
+  @override
+  State<_AnimatedScore> createState() => _AnimatedScoreState();
+}
+
+class _AnimatedScoreState extends State<_AnimatedScore>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    _animation = _tween(0, widget.value);
+    _controller.forward();
+  }
+
+  Animation<double> _tween(double begin, int end) {
+    return Tween<double>(
+      begin: begin,
+      end: end.toDouble(),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedScore oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value == widget.value) return;
+    final from = _animation.value;
+    _animation = _tween(from, widget.value);
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Text(
+          signedInt(_animation.value.round()),
+          maxLines: 1,
+          style: widget.style,
+        );
+      },
     );
   }
 }
@@ -329,12 +437,12 @@ class _CumulativeChartPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2;
       for (var i = 0; i < points.length; i++) {
-        final mood = points[i].mood;
-        if (mood == null) continue;
-        final moodIndex = Mood.getIndex(mood);
-        final dotColor = moodIndex == -1
+        final score = points[i].score;
+        if (score == null) continue;
+        final scoreIndex = Score.getIndex(score);
+        final dotColor = scoreIndex == -1
             ? _colorFor(points[i].cumulative)
-            : Mood.moodColors[moodIndex];
+            : Score.colors[scoreIndex];
         final offset = pointOffset(i);
         canvas.drawCircle(offset, 3.2, Paint()..color = dotColor);
         canvas.drawCircle(offset, 3.2, dotBorder);
