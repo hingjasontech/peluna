@@ -32,7 +32,6 @@ class AnalyticsRangeDropdown extends StatelessWidget {
     required this.anchor,
     required this.today,
     required this.firstEntry,
-    required this.period,
     required this.onSelected,
   });
 
@@ -40,67 +39,34 @@ class AnalyticsRangeDropdown extends StatelessWidget {
   final DateTime anchor;
   final DateTime today;
   final DateTime? firstEntry;
-  final AnalyticsPeriod? period;
   final ValueChanged<AnalyticsRangeSelection> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final period = this.period;
 
     return PopupMenuButton<AnalyticsRangeSelection>(
       tooltip: 'Select date range',
       position: PopupMenuPosition.under,
       offset: const Offset(0, 6),
-      constraints: const BoxConstraints(minWidth: 240, maxWidth: 300),
+      constraints: const BoxConstraints(minWidth: 220, maxWidth: 280),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       onSelected: onSelected,
       itemBuilder: (context) => _menuItems(),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.calendar_month_outlined,
-              size: 22,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'DATE RANGE',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    period == null
-                        ? _labelFor(type, anchor)
-                        : analyticsPeriodLabel(period),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (period != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      _dateRangeLabel(period),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
+            Text(
+              _compactLabel(type, anchor),
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+            Icon(Icons.arrow_drop_down, color: colorScheme.primary),
           ],
         ),
       ),
@@ -121,11 +87,11 @@ class AnalyticsRangeDropdown extends StatelessWidget {
 
     return [
       for (final (rangeType, label) in const [
-        (AnalyticsRangeType.last7Days, 'Last 7 days'),
-        (AnalyticsRangeType.last28Days, 'Last 28 days'),
-        (AnalyticsRangeType.last90Days, 'Last 90 days'),
-        (AnalyticsRangeType.last365Days, 'Last 365 days'),
         (AnalyticsRangeType.lifetime, 'Lifetime'),
+        (AnalyticsRangeType.last7Days, '7D'),
+        (AnalyticsRangeType.last28Days, '28D'),
+        (AnalyticsRangeType.last90Days, '90D'),
+        (AnalyticsRangeType.last365Days, '365D'),
       ])
         PopupMenuItem(
           value: AnalyticsRangeSelection(rangeType),
@@ -169,26 +135,20 @@ class AnalyticsRangeDropdown extends StatelessWidget {
     ];
   }
 
-  String _labelFor(AnalyticsRangeType type, DateTime anchor) {
+  String _compactLabel(AnalyticsRangeType type, DateTime anchor) {
     return switch (type) {
-      AnalyticsRangeType.last7Days => 'Last 7 days',
-      AnalyticsRangeType.last28Days => 'Last 28 days',
-      AnalyticsRangeType.last90Days => 'Last 90 days',
-      AnalyticsRangeType.last365Days => 'Last 365 days',
+      AnalyticsRangeType.last7Days => '7D',
+      AnalyticsRangeType.last28Days => '28D',
+      AnalyticsRangeType.last90Days => '90D',
+      AnalyticsRangeType.last365Days => '365D',
       AnalyticsRangeType.lifetime => 'Lifetime',
       AnalyticsRangeType.year => '${anchor.year}',
-      AnalyticsRangeType.month => '${monthLong(anchor)} ${anchor.year}',
+      AnalyticsRangeType.month =>
+        anchor.year == today.year
+            ? monthShort(anchor)
+            : '${monthShort(anchor)} ${anchor.year}',
       AnalyticsRangeType.custom => 'Custom',
     };
-  }
-
-  String _dateRangeLabel(AnalyticsPeriod period) {
-    final end = period.effectiveEnd;
-    if (period.start == end) return fullDate(period.start);
-    if (period.start.year != end.year) {
-      return '${fullDate(period.start)} – ${fullDate(end)}';
-    }
-    return '${shortDate(period.start)} – ${shortDate(end)}, ${end.year}';
   }
 }
 

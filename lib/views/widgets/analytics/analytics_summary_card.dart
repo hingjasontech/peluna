@@ -7,11 +7,11 @@ class AnalyticsSummaryCard extends StatelessWidget {
   const AnalyticsSummaryCard({
     super.key,
     required this.summary,
-    required this.isLifetime,
+    required this.rangeSelector,
   });
 
   final MoodSummary summary;
-  final bool isLifetime;
+  final Widget rangeSelector;
 
   @override
   Widget build(BuildContext context) {
@@ -25,15 +25,21 @@ class AnalyticsSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              isLifetime ? 'LIFETIME' : 'SELECTED RANGE',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.1,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Score',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                rangeSelector,
+              ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [

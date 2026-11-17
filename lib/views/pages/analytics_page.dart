@@ -19,7 +19,6 @@ class AnalyticsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final request = ref.watch(analyticsRangeProvider);
     final analytics = ref.watch(periodAnalyticsProvider);
-    final period = analytics?.period;
     final today = ref.watch(analyticsTodayProvider);
     final data = ref.watch(analyticsDataProvider);
 
@@ -30,34 +29,31 @@ class AnalyticsPage extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
-            Card.filled(
-              margin: EdgeInsets.zero,
-              child: AnalyticsRangeDropdown(
-                type: request.type,
-                anchor: request.anchor,
-                today: today,
-                firstEntry: data.firstEntryDate,
-                period: period,
-                onSelected: (selection) {
-                  if (selection.type == AnalyticsRangeType.custom) {
-                    _pickCustomRange(context, ref);
-                    return;
-                  }
-                  ref
-                      .read(analyticsRangeProvider.notifier)
-                      .selectPeriod(
-                        selection.type,
-                        year: selection.year,
-                        month: selection.month,
-                      );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
             if (analytics == null)
               _EmptyAnalytics(onWrite: () => _openDay(context, ref, today))
             else
-              _AnalyticsView(analytics: analytics),
+              _AnalyticsView(
+                analytics: analytics,
+                rangeSelector: AnalyticsRangeDropdown(
+                  type: request.type,
+                  anchor: request.anchor,
+                  today: today,
+                  firstEntry: data.firstEntryDate,
+                  onSelected: (selection) {
+                    if (selection.type == AnalyticsRangeType.custom) {
+                      _pickCustomRange(context, ref);
+                      return;
+                    }
+                    ref
+                        .read(analyticsRangeProvider.notifier)
+                        .selectPeriod(
+                          selection.type,
+                          year: selection.year,
+                          month: selection.month,
+                        );
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -66,9 +62,10 @@ class AnalyticsPage extends ConsumerWidget {
 }
 
 class _AnalyticsView extends ConsumerWidget {
-  const _AnalyticsView({required this.analytics});
+  const _AnalyticsView({required this.analytics, required this.rangeSelector});
 
   final PeriodAnalytics analytics;
+  final Widget rangeSelector;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -76,12 +73,11 @@ class _AnalyticsView extends ConsumerWidget {
     final summary = analytics.summary;
     final today = ref.watch(analyticsTodayProvider);
     final weekStart = ref.watch(weekStartProvider);
-    final isLifetime = period.type == AnalyticsRangeType.lifetime;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AnalyticsSummaryCard(summary: summary, isLifetime: isLifetime),
+        AnalyticsSummaryCard(summary: summary, rangeSelector: rangeSelector),
         const SizedBox(height: 16),
         CumulativeScoreCard(
           points: analytics.points,

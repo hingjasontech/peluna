@@ -268,7 +268,14 @@ void main() {
       await tester.pump();
 
       expect(find.text('Lifetime'), findsOneWidget);
-      expect(find.text('LIFETIME'), findsOneWidget);
+      expect(find.text('Score'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AnalyticsSummaryCard),
+          matching: find.text('Lifetime'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Cumulative score'), findsOneWidget);
       expect(find.textContaining('per day'), findsNothing);
       expect(find.byTooltip('Previous period'), findsNothing);
@@ -285,11 +292,10 @@ void main() {
 
       await tester.tap(find.text('Lifetime'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Last 7 days'));
+      await tester.tap(find.text('7D'));
       await tester.pumpAndSettle();
 
-      expect(find.text('SELECTED RANGE'), findsOneWidget);
-      expect(find.text('Last 7 days'), findsOneWidget);
+      expect(find.text('7D'), findsOneWidget);
       expect(find.text('Mood calendar'), findsOneWidget);
       expect(
         find.descendant(

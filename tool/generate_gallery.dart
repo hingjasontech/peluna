@@ -152,7 +152,7 @@ void main() {
 
       await tester.tap(find.text('Lifetime'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Last 28 days'));
+      await tester.tap(find.text('28D'));
       await tester.pumpAndSettle();
       await snap();
 
