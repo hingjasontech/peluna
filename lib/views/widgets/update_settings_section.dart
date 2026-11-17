@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:peluna/providers/update_providers.dart';
 import 'package:peluna/updates/update_models.dart';
-import 'package:peluna/views/widgets/list_tile_widget.dart';
+import 'package:peluna/views/widgets/settings_section.dart';
 import 'package:peluna/views/widgets/update_dialog.dart';
+
+/// Identifies the startup update switch in widget tests.
+const Key autoCheckUpdatesSwitchKey = Key('auto-check-updates-switch');
 
 class UpdateSettingsSection extends ConsumerStatefulWidget {
   const UpdateSettingsSection({super.key});
@@ -44,30 +47,30 @@ class _UpdateSettingsSectionState extends ConsumerState<UpdateSettingsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final autoCheck = ref.watch(autoCheckUpdatesProvider);
 
-    return Column(
-      spacing: 8,
+    return SettingsSection(
+      title: 'Updates',
       children: [
-        ListTileWidget(
-          title: const Text('Check for Updates'),
-          subtitle: const Text('Look for a newer GitHub release.'),
-          leading: const Icon(Icons.system_update_alt_outlined),
+        SettingsTile(
+          title: 'Check for Updates',
+          subtitle: 'Look for a newer GitHub release.',
+          icon: Icons.system_update_alt_outlined,
           trailing: _checking
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.chevron_right),
+              : null,
           onTap: _checking ? null : _checkForUpdates,
         ),
-        ListTileWidget(
-          title: const Text('Check automatically on startup'),
-          subtitle: const Text('Only checks GitHub for a new release.'),
-          leading: const Icon(Icons.autorenew),
+        SettingsTile(
+          title: 'Check automatically on startup',
+          subtitle: 'Checks GitHub on launch.',
+          icon: Icons.autorenew,
           trailing: Switch(
+            key: autoCheckUpdatesSwitchKey,
             value: autoCheck,
             onChanged: (value) =>
                 ref.read(autoCheckUpdatesProvider.notifier).setEnabled(value),
@@ -75,7 +78,6 @@ class _UpdateSettingsSectionState extends ConsumerState<UpdateSettingsSection> {
           onTap: () => ref
               .read(autoCheckUpdatesProvider.notifier)
               .setEnabled(!autoCheck),
-          tileColor: colorScheme.surfaceContainer,
         ),
       ],
     );

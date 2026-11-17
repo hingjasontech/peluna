@@ -10,7 +10,7 @@ import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
 import 'package:peluna/views/pages/home_page.dart';
 import 'package:peluna/views/pages/settings_page.dart';
-import 'package:peluna/views/widgets/list_tile_widget.dart';
+import 'package:peluna/views/widgets/settings_section.dart';
 
 import 'support/test_harness.dart';
 
@@ -101,9 +101,7 @@ void main() {
       // Monday appears both on the tile and in the open dialog.
       expect(find.text('Monday'), findsNWidgets(2));
 
-      await tester.tap(
-        find.widgetWithText(RadioListTile<WeekStart>, 'Sunday'),
-      );
+      await tester.tap(find.widgetWithText(RadioListTile<WeekStart>, 'Sunday'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Save'));
       await tester.pumpAndSettle();
@@ -112,7 +110,7 @@ void main() {
       expect(find.text('Week starts on Sunday'), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byType(ListTileWidget),
+          of: find.widgetWithText(SettingsTile, 'Start of Week'),
           matching: find.text('Sunday'),
         ),
         findsOneWidget,

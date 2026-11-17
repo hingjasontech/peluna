@@ -11,9 +11,12 @@ import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
 import 'package:peluna/providers/update_providers.dart';
 import 'package:peluna/utils/utils.dart';
-import 'package:peluna/views/widgets/list_tile_widget.dart';
+import 'package:peluna/views/widgets/settings_section.dart';
 import 'package:peluna/views/widgets/update_settings_section.dart';
 import 'package:peluna/views/widgets/week_start_menu_widget.dart';
+
+/// Identifies the mood visibility switch in widget tests.
+const Key showMoodOnCalendarSwitchKey = Key('show-moods-on-calendar-switch');
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -21,55 +24,83 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekStart = ref.watch(weekStartProvider);
+    final showMood = ref.watch(showCalendarMoodProvider);
     final supportsSelfUpdate = ref.watch(supportsSelfUpdateProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: ListView(
-        children: [
-          Column(
-            spacing: 8,
-            children: [
-              ListTileWidget(
-                title: const Text('Start of Week'),
-                leading: const Icon(Icons.calendar_view_week_outlined),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 20,
+              children: [
+                SettingsSection(
+                  title: 'Appearance',
                   children: [
-                    Text(weekStart.label),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.navigate_next_outlined),
+                    SettingsTile(
+                      title: 'Start of Week',
+                      subtitle: 'First day of the week.',
+                      icon: Icons.calendar_view_week_outlined,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(weekStart.label),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                      onTap: () => _pickWeekStart(context, ref),
+                    ),
+                    SettingsTile(
+                      title: 'Show Moods on Calendar',
+                      subtitle: 'Show scores on the calendar.',
+                      icon: Icons.visibility_outlined,
+                      trailing: Switch(
+                        key: showMoodOnCalendarSwitchKey,
+                        value: showMood,
+                        onChanged: (value) => ref
+                            .read(showCalendarMoodProvider.notifier)
+                            .setVisible(value),
+                      ),
+                      onTap: () => ref
+                          .read(showCalendarMoodProvider.notifier)
+                          .setVisible(!showMood),
+                    ),
                   ],
                 ),
-                onTap: () => _pickWeekStart(context, ref),
-              ),
-              ListTileWidget(
-                title: const Text('Export Diaries'),
-                leading: const Icon(Icons.file_upload_outlined),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _exportDiaries(context, ref),
-              ),
-              ListTileWidget(
-                title: const Text('Import Diaries'),
-                leading: const Icon(Icons.file_download_outlined),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _importDiaries(context, ref),
-              ),
-              if (supportsSelfUpdate) const UpdateSettingsSection(),
-              ListTileWidget(
-                title: Text(
-                  'Clear All Diary',
-                  style: TextStyle(color: colorScheme.error),
+                SettingsSection(
+                  title: 'Data',
+                  children: [
+                    SettingsTile(
+                      title: 'Export Diaries',
+                      subtitle: 'Save an unencrypted JSON backup.',
+                      icon: Icons.file_upload_outlined,
+                      onTap: () => _exportDiaries(context, ref),
+                    ),
+                    SettingsTile(
+                      title: 'Import Diaries',
+                      subtitle: 'Restore entries from a backup file.',
+                      icon: Icons.file_download_outlined,
+                      onTap: () => _importDiaries(context, ref),
+                    ),
+                    SettingsTile(
+                      title: 'Clear All Diary',
+                      subtitle: 'Permanently delete every entry.',
+                      icon: Icons.delete_outline,
+                      danger: true,
+                      onTap: () => _clearAllDiaries(context, ref),
+                    ),
+                  ],
                 ),
-                leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                trailing: Icon(Icons.chevron_right, color: colorScheme.error),
-                tileColor: colorScheme.error.withValues(alpha: 0.1),
-                onTap: () => _clearAllDiaries(context, ref),
-              ),
-            ],
-          ),
-        ],
+                if (supportsSelfUpdate) const UpdateSettingsSection(),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -16,6 +16,7 @@ import 'package:peluna/updates/update_installer.dart';
 import 'package:peluna/updates/update_models.dart';
 import 'package:peluna/views/pages/settings_page.dart';
 import 'package:peluna/views/widgets/update_dialog.dart';
+import 'package:peluna/views/widgets/update_settings_section.dart';
 
 import 'support/test_harness.dart';
 
@@ -286,6 +287,8 @@ void main() {
       expect(find.text('Check for Updates'), findsOneWidget);
       expect(find.text('Check automatically on startup'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Check for Updates'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Check for Updates'));
       await tester.pumpAndSettle();
 
@@ -299,6 +302,8 @@ void main() {
       await tester.pumpWidget(_settingsPage(hive, checker: checker));
       await tester.pump();
 
+      await tester.ensureVisible(find.text('Check for Updates'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Check for Updates'));
       await tester.pumpAndSettle();
 
@@ -316,12 +321,19 @@ void main() {
       await tester.pumpWidget(_settingsPage(hive));
       await tester.pump();
 
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      final switchFinder = find.byKey(autoCheckUpdatesSwitchKey);
+      await tester.ensureVisible(switchFinder);
+      await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(Switch));
+      expect(tester.widget<Switch>(switchFinder).value, isFalse);
+
+      await tester.tap(switchFinder);
       await tester.pump();
 
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+      expect(
+        tester.widget<Switch>(find.byKey(autoCheckUpdatesSwitchKey)).value,
+        isTrue,
+      );
       expect(hive.settingsBox.get('auto_check_updates'), isTrue);
     });
   });
