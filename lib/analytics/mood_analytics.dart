@@ -1,12 +1,17 @@
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/models/diary_model.dart';
-import 'package:peluna/models/week_start.dart';
-
-/// Primary number shown in the summary card.
-enum ScoreMetric { net, average }
 
 /// Ranges available in the analytics page.
-enum AnalyticsRangeType { lifetime, week, month, year, custom }
+enum AnalyticsRangeType {
+  last7Days,
+  last28Days,
+  last90Days,
+  last365Days,
+  lifetime,
+  year,
+  month,
+  custom,
+}
 
 /// Normalises a [DateTime] to a local, time-free calendar date.
 DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
@@ -27,19 +32,6 @@ int daysInclusive(DateTime start, DateTime end) {
 int _dayKey(DateTime date) =>
     DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/
     Duration.millisecondsPerDay;
-
-int _weekStartWeekday(WeekStart start) => switch (start) {
-  WeekStart.monday => DateTime.monday,
-  WeekStart.sunday => DateTime.sunday,
-  WeekStart.saturday => DateTime.saturday,
-};
-
-/// The first day of the calendar week containing [date].
-DateTime startOfWeek(DateTime date, WeekStart weekStart) {
-  final d = dateOnly(date);
-  final offset = (d.weekday - _weekStartWeekday(weekStart) + 7) % 7;
-  return addDays(d, -offset);
-}
 
 /// Diary entries indexed by calendar day, plus derived mood lookups.
 ///
@@ -102,7 +94,6 @@ class MoodSummary {
     required this.loggedDays,
     required this.missingDays,
     required this.netScore,
-    required this.average,
     required this.positiveDays,
     required this.distribution,
   });
@@ -113,9 +104,6 @@ class MoodSummary {
   final int loggedDays;
   final int missingDays;
   final int netScore;
-
-  /// Mean over every day in the range. Missing days count as zero.
-  final double average;
   final int positiveDays;
 
   /// Count per mood value. Only days with a recorded mood are included.
@@ -150,7 +138,6 @@ MoodSummary summarizeMoods(AnalyticsData data, DateTime start, DateTime end) {
     loggedDays: logged,
     missingDays: totalDays - logged,
     netScore: net,
-    average: totalDays == 0 ? 0 : net / totalDays,
     positiveDays: positive,
     distribution: Map.unmodifiable(distribution),
   );
@@ -221,54 +208,68 @@ AnalyticsPeriod buildPeriod({
   required AnalyticsRangeType type,
   required DateTime anchor,
   required DateTime today,
-  required WeekStart weekStart,
   DateTime? firstEntry,
   DateTime? customStart,
   DateTime? customEnd,
 }) {
   final todayOnly = dateOnly(today);
 
-  if (type == AnalyticsRangeType.lifetime) {
-    var start = dateOnly(firstEntry ?? todayOnly);
-    if (start.isAfter(todayOnly)) start = todayOnly;
-    return AnalyticsPeriod(
-      type: type,
-      start: start,
-      end: todayOnly,
-      effectiveEnd: todayOnly,
-    );
+  switch (type) {
+    case AnalyticsRangeType.lifetime:
+      var start = dateOnly(firstEntry ?? todayOnly);
+      if (start.isAfter(todayOnly)) start = todayOnly;
+      return AnalyticsPeriod(
+        type: type,
+        start: start,
+        end: todayOnly,
+        effectiveEnd: todayOnly,
+      );
+    case AnalyticsRangeType.last7Days:
+      return _trailingPeriod(type, todayOnly, 7);
+    case AnalyticsRangeType.last28Days:
+      return _trailingPeriod(type, todayOnly, 28);
+    case AnalyticsRangeType.last90Days:
+      return _trailingPeriod(type, todayOnly, 90);
+    case AnalyticsRangeType.last365Days:
+      return _trailingPeriod(type, todayOnly, 365);
+    case AnalyticsRangeType.custom:
+      var from = dateOnly(customStart ?? todayOnly);
+      var to = dateOnly(customEnd ?? todayOnly);
+      if (to.isBefore(from)) {
+        final swap = from;
+        from = to;
+        to = swap;
+      }
+      if (to.isAfter(todayOnly)) to = todayOnly;
+      if (from.isAfter(to)) from = to;
+      return AnalyticsPeriod(
+        type: type,
+        start: from,
+        end: to,
+        effectiveEnd: to,
+      );
+    case AnalyticsRangeType.year:
+    case AnalyticsRangeType.month:
+      break;
   }
 
   var safeAnchor = dateOnly(anchor);
   if (safeAnchor.isAfter(todayOnly)) safeAnchor = todayOnly;
 
-  if (type == AnalyticsRangeType.custom) {
-    var from = dateOnly(customStart ?? safeAnchor);
-    var to = dateOnly(customEnd ?? safeAnchor);
-    if (to.isBefore(from)) {
-      final swap = from;
-      from = to;
-      to = swap;
-    }
-    if (to.isAfter(todayOnly)) to = todayOnly;
-    if (from.isAfter(to)) from = to;
-    return AnalyticsPeriod(type: type, start: from, end: to, effectiveEnd: to);
-  }
-
   final DateTime start;
   final DateTime end;
   switch (type) {
-    case AnalyticsRangeType.lifetime:
-      throw StateError('Handled above');
-    case AnalyticsRangeType.week:
-      start = startOfWeek(safeAnchor, weekStart);
-      end = addDays(start, 6);
-    case AnalyticsRangeType.month:
-      start = DateTime(safeAnchor.year, safeAnchor.month, 1);
-      end = DateTime(safeAnchor.year, safeAnchor.month + 1, 0);
     case AnalyticsRangeType.year:
       start = DateTime(safeAnchor.year, 1, 1);
       end = DateTime(safeAnchor.year, 12, 31);
+    case AnalyticsRangeType.month:
+      start = DateTime(safeAnchor.year, safeAnchor.month, 1);
+      end = DateTime(safeAnchor.year, safeAnchor.month + 1, 0);
+    case AnalyticsRangeType.lifetime:
+    case AnalyticsRangeType.last7Days:
+    case AnalyticsRangeType.last28Days:
+    case AnalyticsRangeType.last90Days:
+    case AnalyticsRangeType.last365Days:
     case AnalyticsRangeType.custom:
       throw StateError('Handled above');
   }
@@ -281,22 +282,17 @@ AnalyticsPeriod buildPeriod({
   );
 }
 
-bool canGoToNextPeriod(AnalyticsPeriod period, DateTime today) {
-  final todayOnly = dateOnly(today);
-  final DateTime nextStart;
-  switch (period.type) {
-    case AnalyticsRangeType.lifetime:
-      return false;
-    case AnalyticsRangeType.week:
-      nextStart = addDays(period.start, 7);
-    case AnalyticsRangeType.month:
-      nextStart = DateTime(period.start.year, period.start.month + 1, 1);
-    case AnalyticsRangeType.year:
-      nextStart = DateTime(period.start.year + 1, 1, 1);
-    case AnalyticsRangeType.custom:
-      return false;
-  }
-  return !nextStart.isAfter(todayOnly);
+AnalyticsPeriod _trailingPeriod(
+  AnalyticsRangeType type,
+  DateTime today,
+  int days,
+) {
+  return AnalyticsPeriod(
+    type: type,
+    start: addDays(today, -(days - 1)),
+    end: today,
+    effectiveEnd: today,
+  );
 }
 
 /// Lifetime range from the first saved entry through today, or null when the
@@ -306,11 +302,11 @@ AnalyticsPeriod? buildLifetimePeriod(AnalyticsData data, DateTime today) {
   final first = data.firstEntryOnOrBefore(todayOnly);
   if (first == null) return null;
 
-  return AnalyticsPeriod(
+  return buildPeriod(
     type: AnalyticsRangeType.lifetime,
-    start: first,
-    end: todayOnly,
-    effectiveEnd: todayOnly,
+    anchor: todayOnly,
+    today: todayOnly,
+    firstEntry: first,
   );
 }
 

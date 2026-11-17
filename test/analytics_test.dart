@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:peluna/analytics/mood_analytics.dart';
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/models/diary_model.dart';
-import 'package:peluna/models/week_start.dart';
 import 'package:peluna/views/pages/analytics_page.dart';
 import 'package:peluna/views/widgets/analytics/analytics_format.dart';
 import 'package:peluna/views/widgets/analytics/analytics_summary_card.dart';
+import 'package:peluna/views/widgets/analytics/cumulative_score_card.dart';
 
 import 'support/test_harness.dart';
 
@@ -31,21 +31,14 @@ void main() {
       expect(daysInclusive(DateTime(2026, 11, 16), DateTime(2026, 11, 22)), 7);
       expect(daysInclusive(DateTime(2026, 11, 22), DateTime(2026, 11, 16)), 0);
     });
-
-    test('startOfWeek respects every configured week start', () {
-      final monday = DateTime(2026, 11, 16); // Monday.
-      expect(startOfWeek(monday, WeekStart.monday), monday);
-      expect(startOfWeek(monday, WeekStart.sunday), DateTime(2026, 11, 15));
-      expect(startOfWeek(monday, WeekStart.saturday), DateTime(2026, 11, 14));
-    });
   });
 
   group('score colors', () {
     test('follows the five mood colors', () {
       expect(moodScoreColor(2), Mood.moodColors[0]);
-      expect(moodScoreColor(0.5), Mood.moodColors[1]);
+      expect(moodScoreColor(1), Mood.moodColors[1]);
       expect(moodScoreColor(0), Mood.moodColors[2]);
-      expect(moodScoreColor(-0.5), Mood.moodColors[3]);
+      expect(moodScoreColor(-1), Mood.moodColors[3]);
       expect(moodScoreColor(-2), Mood.moodColors[4]);
     });
   });
@@ -62,12 +55,10 @@ void main() {
       expect(period.type, AnalyticsRangeType.lifetime);
       expect(period.start, DateTime(2026, 1, 1));
       expect(period.end, DateTime(2026, 1, 5));
-      expect(canGoToNextPeriod(period, DateTime(2026, 1, 5)), isFalse);
       expect(analytics.summary.totalDays, 5);
       expect(analytics.summary.loggedDays, 2);
       expect(analytics.summary.missingDays, 3);
       expect(analytics.summary.netScore, 1);
-      expect(analytics.summary.average, closeTo(0.2, 0.0001));
       expect(analytics.summary.positiveDays, 1);
       expect(analytics.summary.countFor(2), 1);
       expect(analytics.summary.countFor(-1), 1);
@@ -86,7 +77,6 @@ void main() {
       expect(analytics.summary.totalDays, 4);
       expect(analytics.summary.loggedDays, 1);
       expect(analytics.summary.netScore, 2);
-      expect(analytics.summary.average, closeTo(0.5, 0.0001));
     });
 
     test('ignores future entries and invalid moods', () {
@@ -130,46 +120,46 @@ void main() {
   });
 
   group('period analytics', () {
-    final today = DateTime(2026, 11, 18); // Wednesday.
+    final today = DateTime(2026, 11, 18);
 
-    test('current week counts only elapsed days', () {
+    test('trailing ranges include today', () {
+      final cases = [
+        (AnalyticsRangeType.last7Days, 7),
+        (AnalyticsRangeType.last28Days, 28),
+        (AnalyticsRangeType.last90Days, 90),
+        (AnalyticsRangeType.last365Days, 365),
+      ];
+
+      for (final (type, days) in cases) {
+        final period = buildPeriod(type: type, anchor: today, today: today);
+
+        expect(period.start, addDays(today, -(days - 1)));
+        expect(period.end, today);
+        expect(period.effectiveEnd, today);
+        expect(period.totalDays, days);
+        expect(period.isPartial, isFalse);
+      }
+    });
+
+    test('last 7 days counts only logged days and missing days', () {
       final data = AnalyticsData.fromDiaries([
         _diary(DateTime(2026, 11, 16), 2),
         _diary(DateTime(2026, 11, 18), 1),
       ]);
       final period = buildPeriod(
-        type: AnalyticsRangeType.week,
+        type: AnalyticsRangeType.last7Days,
         anchor: today,
         today: today,
-        weekStart: WeekStart.monday,
       );
       final analytics = buildPeriodAnalytics(data, period);
 
-      expect(period.start, DateTime(2026, 11, 16));
-      expect(period.end, DateTime(2026, 11, 22));
+      expect(period.start, DateTime(2026, 11, 12));
+      expect(period.end, today);
       expect(period.effectiveEnd, today);
-      expect(period.isPartial, isTrue);
-      expect(analytics.summary.totalDays, 3);
+      expect(analytics.summary.totalDays, 7);
       expect(analytics.summary.netScore, 3);
-      expect(analytics.summary.average, 1);
       expect(analytics.summary.loggedDays, 2);
-      expect(analytics.summary.missingDays, 1);
-      expect(canGoToNextPeriod(period, today), isFalse);
-    });
-
-    test('completed week includes all seven days and allows next', () {
-      final period = buildPeriod(
-        type: AnalyticsRangeType.week,
-        anchor: DateTime(2026, 11, 11),
-        today: today,
-        weekStart: WeekStart.monday,
-      );
-
-      expect(period.start, DateTime(2026, 11, 9));
-      expect(period.end, DateTime(2026, 11, 15));
-      expect(period.effectiveEnd, DateTime(2026, 11, 15));
-      expect(period.isPartial, isFalse);
-      expect(canGoToNextPeriod(period, today), isTrue);
+      expect(analytics.summary.missingDays, 5);
     });
 
     test('month and year clamp their effective end to today', () {
@@ -177,13 +167,11 @@ void main() {
         type: AnalyticsRangeType.month,
         anchor: today,
         today: today,
-        weekStart: WeekStart.monday,
       );
       final year = buildPeriod(
         type: AnalyticsRangeType.year,
         anchor: today,
         today: today,
-        weekStart: WeekStart.monday,
       );
 
       expect(month.start, DateTime(2026, 11, 1));
@@ -192,8 +180,26 @@ void main() {
       expect(year.start, DateTime(2026, 1, 1));
       expect(year.end, DateTime(2026, 12, 31));
       expect(year.effectiveEnd, today);
-      expect(canGoToNextPeriod(month, today), isFalse);
-      expect(canGoToNextPeriod(year, today), isFalse);
+    });
+
+    test('completed month and year keep their full range', () {
+      final month = buildPeriod(
+        type: AnalyticsRangeType.month,
+        anchor: DateTime(2026, 10, 15),
+        today: today,
+      );
+      final year = buildPeriod(
+        type: AnalyticsRangeType.year,
+        anchor: DateTime(2025, 6, 1),
+        today: today,
+      );
+
+      expect(month.start, DateTime(2026, 10, 1));
+      expect(month.end, DateTime(2026, 10, 31));
+      expect(month.effectiveEnd, DateTime(2026, 10, 31));
+      expect(year.start, DateTime(2025, 1, 1));
+      expect(year.end, DateTime(2025, 12, 31));
+      expect(year.effectiveEnd, DateTime(2025, 12, 31));
     });
 
     test('custom ranges are inclusive and future-clamped', () {
@@ -201,7 +207,6 @@ void main() {
         type: AnalyticsRangeType.custom,
         anchor: today,
         today: today,
-        weekStart: WeekStart.monday,
         customStart: DateTime(2026, 11, 1),
         customEnd: DateTime(2026, 12, 1),
       );
@@ -209,7 +214,6 @@ void main() {
       expect(period.start, DateTime(2026, 11, 1));
       expect(period.end, today);
       expect(period.totalDays, 18);
-      expect(canGoToNextPeriod(period, today), isFalse);
     });
 
     test('long ranges produce monthly buckets', () {
@@ -217,7 +221,6 @@ void main() {
         type: AnalyticsRangeType.year,
         anchor: today,
         today: today,
-        weekStart: WeekStart.monday,
       );
       final analytics = buildPeriodAnalytics(
         AnalyticsData.fromDiaries(const []),
@@ -251,7 +254,7 @@ void main() {
       await hive.clear();
     });
 
-    testWidgets('defaults to lifetime and switches to the week view', (
+    testWidgets('defaults to lifetime and switches to a trailing range', (
       tester,
     ) async {
       final now = DateTime.now();
@@ -263,15 +266,16 @@ void main() {
         hive.wrap(const MaterialApp(home: Scaffold(body: AnalyticsPage()))),
       );
       await tester.pump();
-      expect(find.text('0'), findsOneWidget);
 
-      await tester.pump(const Duration(milliseconds: 600));
       expect(find.text('Lifetime'), findsOneWidget);
       expect(find.text('LIFETIME'), findsOneWidget);
       expect(find.text('Cumulative score'), findsOneWidget);
-      expect(find.textContaining('days logged'), findsNothing);
-      expect(find.textContaining('Average +'), findsNothing);
+      expect(find.text('Mood mix'), findsOneWidget);
+      expect(find.textContaining('per day'), findsNothing);
       expect(find.byTooltip('Previous period'), findsNothing);
+
+      expect(find.text('0'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
       final score = tester.widget<Text>(
         find.descendant(
           of: find.byType(AnalyticsSummaryCard),
@@ -280,21 +284,21 @@ void main() {
       );
       expect(score.style?.color, Mood.moodColors[0]);
 
-      await tester.tap(find.text('Week'));
-      await tester.pump();
+      await tester.tap(find.text('Lifetime'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Last 7 days'));
+      await tester.pumpAndSettle();
 
       expect(find.text('SELECTED RANGE'), findsOneWidget);
+      expect(find.text('Last 7 days'), findsOneWidget);
       expect(find.text('Mood calendar'), findsOneWidget);
-      expect(find.byTooltip('Previous period'), findsOneWidget);
-
-      await tester.tap(find.text('Average'));
-      await tester.pump();
-      expect(find.text('per day'), findsOneWidget);
-
-      await tester.tap(find.text('Lifetime'));
-      await tester.pump();
-      expect(find.text('LIFETIME'), findsOneWidget);
-      expect(find.byTooltip('Previous period'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(CumulativeScoreCard),
+          matching: find.text('Mood mix'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows the empty lifetime state without entries', (

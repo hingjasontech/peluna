@@ -46,20 +46,12 @@ const List<String> _weekdaysShort = [
 
 String signedInt(int value) => value > 0 ? '+$value' : '$value';
 
-String signedAverage(double value) {
-  if (value.abs() < 0.005) return '0.00';
-  return '${value > 0 ? '+' : ''}${value.toStringAsFixed(2)}';
-}
-
-/// Maps an aggregate score to the same green/orange/red palette as moods.
-///
-/// The average is used so lifetime totals still read as "good" or "bad"
-/// regardless of how many days they cover.
-Color moodScoreColor(double average) {
-  if (average >= 1.5) return Mood.moodColors[0];
-  if (average > 0) return Mood.moodColors[1];
-  if (average <= -1.5) return Mood.moodColors[4];
-  if (average < 0) return Mood.moodColors[3];
+/// Maps a net score to the same green/orange/red palette as moods.
+Color moodScoreColor(int score) {
+  if (score >= 2) return Mood.moodColors[0];
+  if (score > 0) return Mood.moodColors[1];
+  if (score <= -2) return Mood.moodColors[4];
+  if (score < 0) return Mood.moodColors[3];
   return Mood.moodColors[2];
 }
 
@@ -94,13 +86,20 @@ String analyticsPeriodLabel(AnalyticsPeriod period) {
   final end = period.end;
 
   switch (period.type) {
+    case AnalyticsRangeType.last7Days:
+      return 'Last 7 days';
+    case AnalyticsRangeType.last28Days:
+      return 'Last 28 days';
+    case AnalyticsRangeType.last90Days:
+      return 'Last 90 days';
+    case AnalyticsRangeType.last365Days:
+      return 'Last 365 days';
     case AnalyticsRangeType.lifetime:
       return 'Lifetime';
     case AnalyticsRangeType.month:
       return '${monthLong(start)} ${start.year}';
     case AnalyticsRangeType.year:
       return '${start.year}';
-    case AnalyticsRangeType.week:
     case AnalyticsRangeType.custom:
       if (start == end) return fullDate(start);
       if (start.year != end.year) {

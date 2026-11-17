@@ -145,12 +145,14 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
-      // Analytics: lifetime summary, then the month view.
+      // Analytics: lifetime summary, then a trailing range.
       router.go('/analytics');
       await tester.pumpAndSettle();
       await snap();
 
-      await tester.tap(find.text('Month'));
+      await tester.tap(find.text('Lifetime'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Last 28 days'));
       await tester.pumpAndSettle();
       await snap();
 

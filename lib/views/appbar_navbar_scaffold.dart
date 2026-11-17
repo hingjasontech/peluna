@@ -12,11 +12,17 @@ class AppbarNavbarScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isHomePage = navigationShell.currentIndex == 0;
+    final index = navigationShell.currentIndex;
+    final title = switch (index) {
+      0 => 'Peluna',
+      1 => 'Analytics',
+      _ => 'Settings',
+    };
 
     return Scaffold(
       appBar: AppBarWidget(
-        actions: [if (isHomePage) const MoodVisibilityToggle()],
+        title: Text(title),
+        actions: [if (index == 0) const MoodVisibilityToggle()],
       ),
       bottomNavigationBar: NavbarWidget(navigationShell: navigationShell),
       body: navigationShell,

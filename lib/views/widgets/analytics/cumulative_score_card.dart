@@ -10,11 +10,13 @@ class CumulativeScoreCard extends StatelessWidget {
   const CumulativeScoreCard({
     super.key,
     required this.points,
+    required this.summary,
     required this.title,
     required this.subtitle,
   });
 
   final List<CumulativePoint> points;
+  final MoodSummary summary;
   final String title;
   final String subtitle;
 
@@ -87,28 +89,131 @@ class CumulativeScoreCard extends StatelessWidget {
                   ),
                 ),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 18),
+            Divider(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 14),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 14,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Days without a mood add 0 to the line.',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    'Mood mix',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
+                  ),
+                ),
+                Text(
+                  summary.loggedDays == 0
+                      ? 'No moods logged'
+                      : '${countDays(summary.loggedDays)} with a mood',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            if (summary.loggedDays > 0) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: SizedBox(
+                  height: 12,
+                  child: Row(
+                    children: [
+                      for (final mood in Mood.moodInt)
+                        if (summary.countFor(mood) > 0)
+                          Expanded(
+                            flex: summary.countFor(mood),
+                            child: ColoredBox(
+                              color: Mood.moodColors[Mood.getIndex(mood)],
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 14,
+                runSpacing: 8,
+                children: [
+                  for (var index = 0; index < Mood.moodInt.length; index++)
+                    _LegendItem(
+                      color: Mood.moodColors[index],
+                      label: Mood.moodString[index],
+                      count: summary.countFor(Mood.moodInt[index]),
+                    ),
+                ],
+              ),
+            ] else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Add a mood to a diary entry to see the mix.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
+            Text(
+              summary.missingDays > 0
+                  ? '${summary.missingDays} missing '
+                        '${summary.missingDays == 1 ? 'day counts' : 'days count'} as 0.'
+                  : 'Every day in this range has a mood.',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.count,
+  });
+
+  final Color color;
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$label $count',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

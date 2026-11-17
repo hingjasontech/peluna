@@ -12,18 +12,17 @@ import 'package:peluna/views/widgets/analytics/analytics_summary_card.dart';
 import 'package:peluna/views/widgets/analytics/cumulative_score_card.dart';
 import 'package:peluna/views/widgets/analytics/monthly_score_card.dart';
 import 'package:peluna/views/widgets/analytics/mood_calendar_card.dart';
-import 'package:peluna/views/widgets/analytics/mood_distribution_card.dart';
 
 class AnalyticsPage extends ConsumerWidget {
   const AnalyticsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final metric = ref.watch(scoreMetricProvider);
-    final type = ref.watch(analyticsRangeProvider).type;
+    final request = ref.watch(analyticsRangeProvider);
     final analytics = ref.watch(periodAnalyticsProvider);
     final period = analytics?.period;
     final today = ref.watch(analyticsTodayProvider);
+    final data = ref.watch(analyticsDataProvider);
 
     return Align(
       alignment: Alignment.topCenter,
@@ -34,49 +33,32 @@ class AnalyticsPage extends ConsumerWidget {
           children: [
             Card.filled(
               margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                child: Column(
-                  children: [
-                    AnalyticsRangeTypeSelector(
-                      type: type,
-                      onChanged: (value) {
-                        if (value == AnalyticsRangeType.custom) {
-                          _pickCustomRange(context, ref);
-                        } else {
-                          ref
-                              .read(analyticsRangeProvider.notifier)
-                              .selectType(value);
-                        }
-                      },
-                    ),
-                    if (period != null &&
-                        period.type != AnalyticsRangeType.lifetime) ...[
-                      const SizedBox(height: 2),
-                      AnalyticsRangeBar(
-                        period: period,
-                        today: today,
-                        canGoNext: canGoToNextPeriod(period, today),
-                        onPrevious: () => ref
-                            .read(analyticsRangeProvider.notifier)
-                            .previous(),
-                        onNext: () =>
-                            ref.read(analyticsRangeProvider.notifier).next(),
-                        onToday: () => ref
-                            .read(analyticsRangeProvider.notifier)
-                            .goToToday(),
-                        onPickCustom: () => _pickCustomRange(context, ref),
-                      ),
-                    ],
-                  ],
-                ),
+              child: AnalyticsRangeDropdown(
+                type: request.type,
+                anchor: request.anchor,
+                today: today,
+                firstEntry: data.firstEntryDate,
+                period: period,
+                onSelected: (selection) {
+                  if (selection.type == AnalyticsRangeType.custom) {
+                    _pickCustomRange(context, ref);
+                    return;
+                  }
+                  ref
+                      .read(analyticsRangeProvider.notifier)
+                      .selectPeriod(
+                        selection.type,
+                        year: selection.year,
+                        month: selection.month,
+                      );
+                },
               ),
             ),
             const SizedBox(height: 16),
             if (analytics == null)
               _EmptyAnalytics(onWrite: () => _openDay(context, ref, today))
             else
-              _AnalyticsView(analytics: analytics, metric: metric),
+              _AnalyticsView(analytics: analytics),
           ],
         ),
       ),
@@ -85,10 +67,9 @@ class AnalyticsPage extends ConsumerWidget {
 }
 
 class _AnalyticsView extends ConsumerWidget {
-  const _AnalyticsView({required this.analytics, required this.metric});
+  const _AnalyticsView({required this.analytics});
 
   final PeriodAnalytics analytics;
-  final ScoreMetric metric;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,16 +83,11 @@ class _AnalyticsView extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AnalyticsSummaryCard(
-          summary: summary,
-          metric: metric,
-          onMetricChanged: (value) =>
-              ref.read(scoreMetricProvider.notifier).select(value),
-          isLifetime: isLifetime,
-        ),
+        AnalyticsSummaryCard(summary: summary, isLifetime: isLifetime),
         const SizedBox(height: 16),
         CumulativeScoreCard(
           points: analytics.points,
+          summary: summary,
           title: 'Cumulative score',
           subtitle: isLifetime
               ? 'Since ${fullDate(period.start)} · '
@@ -136,8 +112,6 @@ class _AnalyticsView extends ConsumerWidget {
             onDayTap: (date) => _openDay(context, ref, date),
           ),
         ],
-        const SizedBox(height: 16),
-        MoodDistributionCard(summary: summary),
       ],
     );
   }

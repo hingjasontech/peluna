@@ -1,278 +1,224 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'package:peluna/analytics/mood_analytics.dart';
 import 'package:peluna/views/widgets/analytics/analytics_format.dart';
 
-class AnalyticsRangeTypeSelector extends StatelessWidget {
-  const AnalyticsRangeTypeSelector({
+/// A concrete choice from the date-range menu.
+class AnalyticsRangeSelection {
+  const AnalyticsRangeSelection(this.type, {this.year, this.month});
+
+  final AnalyticsRangeType type;
+  final int? year;
+  final int? month;
+
+  @override
+  bool operator ==(Object other) {
+    return other is AnalyticsRangeSelection &&
+        other.type == type &&
+        other.year == year &&
+        other.month == month;
+  }
+
+  @override
+  int get hashCode => Object.hash(type, year, month);
+}
+
+class AnalyticsRangeDropdown extends StatelessWidget {
+  const AnalyticsRangeDropdown({
     super.key,
     required this.type,
-    required this.onChanged,
+    required this.anchor,
+    required this.today,
+    required this.firstEntry,
+    required this.period,
+    required this.onSelected,
   });
 
   final AnalyticsRangeType type;
-  final ValueChanged<AnalyticsRangeType> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PillSelector<AnalyticsRangeType>(
-      selected: type,
-      onChanged: onChanged,
-      options: const [
-        (AnalyticsRangeType.lifetime, 'Lifetime'),
-        (AnalyticsRangeType.week, 'Week'),
-        (AnalyticsRangeType.month, 'Month'),
-        (AnalyticsRangeType.year, 'Year'),
-        (AnalyticsRangeType.custom, 'Custom'),
-      ],
-    );
-  }
-}
-
-class AnalyticsRangeBar extends StatelessWidget {
-  const AnalyticsRangeBar({
-    super.key,
-    required this.period,
-    required this.today,
-    required this.canGoNext,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onToday,
-    required this.onPickCustom,
-  });
-
-  final AnalyticsPeriod period;
+  final DateTime anchor;
   final DateTime today;
-  final bool canGoNext;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onToday;
-  final VoidCallback onPickCustom;
+  final DateTime? firstEntry;
+  final AnalyticsPeriod? period;
+  final ValueChanged<AnalyticsRangeSelection> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isCustom = period.type == AnalyticsRangeType.custom;
-    final includesToday = period.contains(today);
+    final period = this.period;
+
+    return PopupMenuButton<AnalyticsRangeSelection>(
+      tooltip: 'Select date range',
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, 6),
+      constraints: const BoxConstraints(minWidth: 240, maxWidth: 300),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      onSelected: onSelected,
+      itemBuilder: (context) => _menuItems(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_month_outlined,
+              size: 22,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DATE RANGE',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    period == null
+                        ? _labelFor(type, anchor)
+                        : analyticsPeriodLabel(period),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (period != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      _dateRangeLabel(period),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<PopupMenuEntry<AnalyticsRangeSelection>> _menuItems() {
+    final currentYear = today.year;
+    final firstYear = firstEntry?.year;
+    final earliestYear = math.min(
+      firstYear ?? currentYear - 1,
+      currentYear - 1,
+    );
+    final recentMonths = [
+      for (var offset = 0; offset < 3; offset++)
+        DateTime(today.year, today.month - offset, 1),
+    ];
+
+    return [
+      for (final (rangeType, label) in const [
+        (AnalyticsRangeType.last7Days, 'Last 7 days'),
+        (AnalyticsRangeType.last28Days, 'Last 28 days'),
+        (AnalyticsRangeType.last90Days, 'Last 90 days'),
+        (AnalyticsRangeType.last365Days, 'Last 365 days'),
+        (AnalyticsRangeType.lifetime, 'Lifetime'),
+      ])
+        PopupMenuItem(
+          value: AnalyticsRangeSelection(rangeType),
+          child: _MenuLabel(label: label, selected: type == rangeType),
+        ),
+      const PopupMenuDivider(),
+      for (var year = currentYear; year >= earliestYear; year--)
+        PopupMenuItem(
+          value: AnalyticsRangeSelection(AnalyticsRangeType.year, year: year),
+          child: _MenuLabel(
+            label: '$year',
+            selected: type == AnalyticsRangeType.year && anchor.year == year,
+          ),
+        ),
+      const PopupMenuDivider(),
+      for (final month in recentMonths)
+        PopupMenuItem(
+          value: AnalyticsRangeSelection(
+            AnalyticsRangeType.month,
+            year: month.year,
+            month: month.month,
+          ),
+          child: _MenuLabel(
+            label: month.year == currentYear
+                ? monthLong(month)
+                : '${monthLong(month)} ${month.year}',
+            selected:
+                type == AnalyticsRangeType.month &&
+                anchor.year == month.year &&
+                anchor.month == month.month,
+          ),
+        ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        value: const AnalyticsRangeSelection(AnalyticsRangeType.custom),
+        child: _MenuLabel(
+          label: 'Custom',
+          selected: type == AnalyticsRangeType.custom,
+        ),
+      ),
+    ];
+  }
+
+  String _labelFor(AnalyticsRangeType type, DateTime anchor) {
+    return switch (type) {
+      AnalyticsRangeType.last7Days => 'Last 7 days',
+      AnalyticsRangeType.last28Days => 'Last 28 days',
+      AnalyticsRangeType.last90Days => 'Last 90 days',
+      AnalyticsRangeType.last365Days => 'Last 365 days',
+      AnalyticsRangeType.lifetime => 'Lifetime',
+      AnalyticsRangeType.year => '${anchor.year}',
+      AnalyticsRangeType.month => '${monthLong(anchor)} ${anchor.year}',
+      AnalyticsRangeType.custom => 'Custom',
+    };
+  }
+
+  String _dateRangeLabel(AnalyticsPeriod period) {
+    final end = period.effectiveEnd;
+    if (period.start == end) return fullDate(period.start);
+    if (period.start.year != end.year) {
+      return '${fullDate(period.start)} – ${fullDate(end)}';
+    }
+    return '${shortDate(period.start)} – ${shortDate(end)}, ${end.year}';
+  }
+}
+
+class _MenuLabel extends StatelessWidget {
+  const _MenuLabel({required this.label, required this.selected});
+
+  final String label;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Row(
       children: [
-        if (!isCustom)
-          IconButton(
-            tooltip: 'Previous period',
-            onPressed: onPrevious,
-            icon: const Icon(Icons.chevron_left),
-          ),
         Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                analyticsPeriodLabel(period),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (period.isPartial) ...[
-                const SizedBox(height: 2),
-                Text(
-                  'In progress',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ],
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: selected ? colorScheme.primary : null,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
         ),
-        if (!includesToday && !isCustom)
-          IconButton(
-            tooltip: 'Jump to today',
-            onPressed: onToday,
-            icon: const Icon(Icons.today_outlined),
-          ),
-        if (isCustom)
-          IconButton(
-            tooltip: 'Change date range',
-            onPressed: onPickCustom,
-            icon: const Icon(Icons.calendar_month_outlined),
-          )
-        else
-          IconButton(
-            tooltip: 'Next period',
-            onPressed: canGoNext ? onNext : null,
-            icon: const Icon(Icons.chevron_right),
-          ),
+        if (selected) ...[
+          const SizedBox(width: 12),
+          Icon(Icons.check, size: 18, color: colorScheme.primary),
+        ],
       ],
-    );
-  }
-}
-
-class AnalyticsMetricToggle extends StatelessWidget {
-  const AnalyticsMetricToggle({
-    super.key,
-    required this.metric,
-    required this.onChanged,
-  });
-
-  final ScoreMetric metric;
-  final ValueChanged<ScoreMetric> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _MetricButton(
-            label: 'Net',
-            selected: metric == ScoreMetric.net,
-            onTap: () => onChanged(ScoreMetric.net),
-          ),
-          _MetricButton(
-            label: 'Average',
-            selected: metric == ScoreMetric.average,
-            onTap: () => onChanged(ScoreMetric.average),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricButton extends StatelessWidget {
-  const _MetricButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? colorScheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: selected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurfaceVariant,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PillSelector<T> extends StatelessWidget {
-  const _PillSelector({
-    required this.selected,
-    required this.onChanged,
-    required this.options,
-  });
-
-  final T selected;
-  final ValueChanged<T> onChanged;
-  final List<(T, String)> options;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          for (final option in options)
-            Expanded(
-              child: _PillButton(
-                label: option.$2,
-                selected: selected == option.$1,
-                onTap: () => onChanged(option.$1),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PillButton extends StatelessWidget {
-  const _PillButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
-          decoration: BoxDecoration(
-            color: selected ? colorScheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: selected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurfaceVariant,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
