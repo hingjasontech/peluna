@@ -54,7 +54,6 @@ class _UpdateSettingsSectionState extends ConsumerState<UpdateSettingsSection> {
       children: [
         SettingsTile(
           title: 'Check for Updates',
-          subtitle: 'Look for a newer GitHub release.',
           icon: Icons.system_update_alt_outlined,
           trailing: _checking
               ? const SizedBox(
@@ -67,7 +66,6 @@ class _UpdateSettingsSectionState extends ConsumerState<UpdateSettingsSection> {
         ),
         SettingsTile(
           title: 'Check automatically on startup',
-          subtitle: 'Checks GitHub on launch.',
           icon: Icons.autorenew,
           trailing: Switch(
             key: autoCheckUpdatesSwitchKey,

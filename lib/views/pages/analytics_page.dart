@@ -7,7 +7,6 @@ import 'package:peluna/providers/analytics_providers.dart';
 import 'package:peluna/providers/diary_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
 import 'package:peluna/views/widgets/analytics/analytics_controls.dart';
-import 'package:peluna/views/widgets/analytics/analytics_format.dart';
 import 'package:peluna/views/widgets/analytics/analytics_summary_card.dart';
 import 'package:peluna/views/widgets/analytics/cumulative_score_card.dart';
 import 'package:peluna/views/widgets/analytics/monthly_score_card.dart';
@@ -78,7 +77,6 @@ class _AnalyticsView extends ConsumerWidget {
     final today = ref.watch(analyticsTodayProvider);
     final weekStart = ref.watch(weekStartProvider);
     final isLifetime = period.type == AnalyticsRangeType.lifetime;
-    final isCustom = period.type == AnalyticsRangeType.custom;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,14 +87,6 @@ class _AnalyticsView extends ConsumerWidget {
           points: analytics.points,
           summary: summary,
           title: 'Cumulative score',
-          subtitle: isLifetime
-              ? 'Since ${fullDate(period.start)} · '
-                    '${countDays(summary.totalDays)} tracked'
-              : isCustom
-              ? '${countDays(summary.totalDays)} selected · '
-                    '${summary.loggedDays} logged'
-              : '${summary.loggedDays} of '
-                    '${summary.totalDays} days logged',
         ),
         if (analytics.monthlyBuckets.isNotEmpty) ...[
           const SizedBox(height: 16),

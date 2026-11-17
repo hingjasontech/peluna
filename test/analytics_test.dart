@@ -270,7 +270,6 @@ void main() {
       expect(find.text('Lifetime'), findsOneWidget);
       expect(find.text('LIFETIME'), findsOneWidget);
       expect(find.text('Cumulative score'), findsOneWidget);
-      expect(find.text('Mood mix'), findsOneWidget);
       expect(find.textContaining('per day'), findsNothing);
       expect(find.byTooltip('Previous period'), findsNothing);
 
@@ -295,7 +294,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(CumulativeScoreCard),
-          matching: find.text('Mood mix'),
+          matching: find.text('Awesome 1'),
         ),
         findsOneWidget,
       );

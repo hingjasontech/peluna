@@ -12,13 +12,11 @@ class CumulativeScoreCard extends StatelessWidget {
     required this.points,
     required this.summary,
     required this.title,
-    required this.subtitle,
   });
 
   final List<CumulativePoint> points;
   final MoodSummary summary;
   final String title;
-  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -42,13 +40,6 @@ class CumulativeScoreCard extends StatelessWidget {
               title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -95,28 +86,6 @@ class CumulativeScoreCard extends StatelessWidget {
               color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Mood mix',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Text(
-                  summary.loggedDays == 0
-                      ? 'No moods logged'
-                      : '${countDays(summary.loggedDays)} with a mood',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
             if (summary.loggedDays > 0) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(5),
