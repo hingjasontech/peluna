@@ -17,6 +17,10 @@ flutter test tool/generate_gallery.dart  # regenerate README gallery
 
 CI pins Flutter 3.50.0 (Dart 3.14) and uses the committed lockfile. `flutter analyze` already reports many `deprecated_member_use` infos; do not mass-migrate them as part of unrelated work.
 
+## Dependencies
+
+- Agents may add or remove any package from pub.dev when the task needs it. Prefer `flutter pub add <package>` / `flutter pub remove <package>` and commit both `pubspec.yaml` and `pubspec.lock`; CI installs with `--enforce-lockfile`.
+
 ## Wiring
 
 - `lib/main.dart` opens the `diaries` and `settings` Hive boxes and overrides `diaryRepositoryProvider` / `settingsRepositoryProvider`. Those providers throw until overridden, so widget tests must use `HiveTestHarness` or provide equivalent overrides.
