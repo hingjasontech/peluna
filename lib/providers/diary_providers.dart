@@ -7,7 +7,7 @@ import 'package:peluna/providers/app_providers.dart';
 /// The day currently selected on the home calendar.
 class SelectedDateNotifier extends Notifier<DateTime> {
   @override
-  DateTime build() => DateTime.now();
+  DateTime build() => ref.read(nowProvider)();
 
   void select(DateTime day) => state = day;
 }

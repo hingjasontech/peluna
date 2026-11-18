@@ -4,6 +4,12 @@ import 'package:peluna/data/diary_backup_service.dart';
 import 'package:peluna/data/diary_repository.dart';
 import 'package:peluna/data/settings_repository.dart';
 
+/// Returns the current time.
+///
+/// Widget tests and the landing-hero generator override this with a fixed
+/// clock so screenshots do not depend on the machine's date.
+final nowProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
 /// Repository backed by the diaries Hive box.
 ///
 /// Overridden in `main` (and in tests) with an instance bound to an opened box.

@@ -48,6 +48,13 @@ CI pins Flutter 3.50.0 (Dart 3.14) and uses the committed lockfile. `flutter ana
 - The Gallery workflow reruns the generator on `main` for changes under `lib/`, `tool/generate_gallery.dart`, or pubspec, then commits the image. Expect a bot commit after such a push and `git pull --ff-only` before continuing.
 - CI renders on Linux, so its image can differ slightly from a local render; the bot commit is the authoritative version.
 
+## Landing hero
+
+- `tool/generate_landing_hero.dart` renders the real home screen at 390×844 @2x with a pinned Nov 10–17, 2026 fixture into `build/landing/` (`home.png`, `og.png`, `manifest.json`). Run `flutter test tool/generate_landing_hero.dart`.
+- The pinned date is intentional: it makes a byte-level image diff mean "the home page UI changed". Without it, the rolling calendar would make every release look changed. `nowProvider` exists so the generator can pin "today" as well.
+- The `publish-hero` job in `android-release.yml` runs after a successful `v*` release and pushes the images to the separate site repo only when their bytes changed. It stays skipped until the `SITE_REPO` repository variable and `SITE_DEPLOY_KEY` secret exist.
+- Never hand-edit the published hero; change the widget or the fixture and regenerate.
+
 ## Releases
 
 - A push to `main` never releases. The Android workflow runs only for `v*` tags (or manual dispatch of an existing tag).

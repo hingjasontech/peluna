@@ -34,6 +34,41 @@ reorder screens. The `Gallery` GitHub Actions workflow also runs it on pushes
 to `main` that touch `lib/` and commits the refreshed image, so the README
 never drifts from the app.
 
+## Landing hero
+
+The hero for the separate landing-page repo is rendered from the real home
+screen, pinned to Nov 10–17, 2026 so the image only changes when the UI does:
+
+```sh
+flutter test tool/generate_landing_hero.dart
+```
+
+This writes `build/landing/home.png`, `og.png`, and `manifest.json`. The
+`publish-hero` job in `Android Release` runs after a successful `v*` release
+and pushes those files to the site repo, skipping the push when the images are
+byte-identical.
+
+One-time site repo setup:
+
+1. Create the Astro repo with placeholders at `src/assets/hero/home.png` and
+   `src/assets/og/og.png`. The workflow also writes
+   `src/assets/hero/manifest.json`.
+2. Generate a deploy key outside this repo:
+
+   ```sh
+   ssh-keygen -t ed25519 -C "peluna-hero-publisher" -f peluna_hero_deploy -N ""
+   ```
+
+3. Add `peluna_hero_deploy.pub` to the **site repo** as a deploy key with write
+   access.
+4. Add the private key as the `SITE_DEPLOY_KEY` secret in this repo, and a
+   repository variable `SITE_REPO` set to `owner/repo`.
+5. Make the site repo deploy on push to its default branch, or connect it to
+   Vercel/Netlify's Git integration.
+
+`publish-hero` is skipped until `SITE_REPO` is set, so the release workflow is
+safe to keep before the site repo exists.
+
 ## Releasing
 
 Android APKs are built, signed, and published by GitHub Actions.

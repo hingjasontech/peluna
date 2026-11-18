@@ -31,6 +31,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final now = ref.watch(nowProvider)();
     final selectedDate = ref.watch(selectedDateProvider);
     final showScore = ref.watch(showCalendarScoreProvider);
     final weekStart = ref.watch(weekStartProvider);
@@ -49,10 +50,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           children: [
             // Calendar
             TableCalendar<Diary>(
-              firstDay: DateTime.utc(DateTime.now().year - 50, 1, 1),
-              lastDay: DateTime.utc(DateTime.now().year + 50, 12, 31),
+              firstDay: DateTime.utc(now.year - 50, 1, 1),
+              lastDay: DateTime.utc(now.year + 50, 12, 31),
               focusedDay: _focusedDay,
-              currentDay: DateTime.now(),
+              currentDay: now,
               availableGestures: AvailableGestures.horizontalSwipe,
               calendarFormat: CalendarFormat.month,
               availableCalendarFormats: const {CalendarFormat.month: 'Month'},
@@ -136,7 +137,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   }
 
                   final isSelected = isSameDay(selectedDate, day);
-                  final isToday = isSameDay(DateTime.now(), day);
+                  final isToday = isSameDay(now, day);
                   final isOutside = day.month != focusedDay.month;
 
                   Widget scoreCircle = ScoreCircleWidget(
