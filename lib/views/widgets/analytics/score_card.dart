@@ -244,33 +244,38 @@ class _AnimatedScore extends StatefulWidget {
 
 class _AnimatedScoreState extends State<_AnimatedScore>
     with SingleTickerProviderStateMixin {
+  /// The count always takes this long, no matter how far the score moves.
+  static const Duration _countDuration = Duration(milliseconds: 500);
+
   late final AnimationController _controller;
-  late Animation<double> _animation;
+  int _from = 0;
+  late int _to;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    );
-    _animation = _tween(0, widget.value);
-    _controller.forward();
+    _to = widget.value;
+    _controller = AnimationController(vsync: this, duration: _countDuration)
+      ..forward();
   }
 
-  Animation<double> _tween(double begin, int end) {
-    return Tween<double>(
-      begin: begin,
-      end: end.toDouble(),
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  /// Advances one point at a time, with the final point landing on the last
+  /// frame so even a +1 change uses the full [_countDuration].
+  int get _displayedValue {
+    final delta = _to - _from;
+    if (delta == 0) return _to;
+
+    final steps = delta.abs();
+    final completed = (_controller.value * steps).floor();
+    return _from + delta.sign * math.min(completed, steps);
   }
 
   @override
   void didUpdateWidget(covariant _AnimatedScore oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value == widget.value) return;
-    final from = _animation.value;
-    _animation = _tween(from, widget.value);
+    _from = _displayedValue;
+    _to = widget.value;
     _controller.forward(from: 0);
   }
 
@@ -286,7 +291,7 @@ class _AnimatedScoreState extends State<_AnimatedScore>
       animation: _controller,
       builder: (context, _) {
         return Text(
-          signedInt(_animation.value.round()),
+          signedInt(_displayedValue),
           maxLines: 1,
           style: widget.style,
         );

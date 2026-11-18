@@ -56,7 +56,6 @@ class SettingsTile extends StatelessWidget {
   const SettingsTile({
     super.key,
     required this.title,
-    this.subtitle,
     this.icon,
     this.trailing,
     this.onTap,
@@ -64,7 +63,6 @@ class SettingsTile extends StatelessWidget {
   });
 
   final String title;
-  final String? subtitle;
   final IconData? icon;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -84,7 +82,6 @@ class SettingsTile extends StatelessWidget {
         title,
         style: danger ? TextStyle(color: colorScheme.error) : null,
       ),
-      subtitle: subtitle == null ? null : Text(subtitle!),
       trailing:
           trailing ??
           (onTap == null

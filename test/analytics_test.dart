@@ -281,7 +281,12 @@ void main() {
       expect(find.byTooltip('Previous period'), findsNothing);
 
       expect(find.text('0'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(
+        find.descendant(of: find.byType(ScoreCard), matching: find.text('+1')),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(milliseconds: 250));
       final score = tester.widget<Text>(
         find.descendant(of: find.byType(ScoreCard), matching: find.text('+2')),
       );
@@ -301,6 +306,29 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('counts a +1 score over the full 500ms', (tester) async {
+      final now = DateTime.now();
+      await tester.runAsync(() async {
+        await hive.put(now, _diary(now, 1));
+      });
+
+      await tester.pumpWidget(
+        hive.wrap(const MaterialApp(home: Scaffold(body: AnalyticsPage()))),
+      );
+      await tester.pump();
+
+      Finder scoreText(String text) => find.descendant(
+        of: find.byType(ScoreCard),
+        matching: find.text(text),
+      );
+
+      expect(scoreText('0'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 499));
+      expect(scoreText('0'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(scoreText('+1'), findsOneWidget);
     });
 
     testWidgets('shows the empty lifetime state without entries', (

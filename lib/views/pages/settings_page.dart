@@ -43,7 +43,6 @@ class SettingsPage extends ConsumerWidget {
                   children: [
                     SettingsTile(
                       title: 'Start of Week',
-                      subtitle: 'First day of the week.',
                       icon: Icons.calendar_view_week_outlined,
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -57,7 +56,6 @@ class SettingsPage extends ConsumerWidget {
                     ),
                     SettingsTile(
                       title: 'Show Scores on Calendar',
-                      subtitle: 'Show scores on the calendar.',
                       icon: Icons.visibility_outlined,
                       trailing: Switch(
                         key: showScoreOnCalendarSwitchKey,
@@ -77,19 +75,16 @@ class SettingsPage extends ConsumerWidget {
                   children: [
                     SettingsTile(
                       title: 'Export Diaries',
-                      subtitle: 'Save an unencrypted JSON backup.',
                       icon: Icons.file_upload_outlined,
                       onTap: () => _exportDiaries(context, ref),
                     ),
                     SettingsTile(
                       title: 'Import Diaries',
-                      subtitle: 'Restore entries from a backup file.',
                       icon: Icons.file_download_outlined,
                       onTap: () => _importDiaries(context, ref),
                     ),
                     SettingsTile(
                       title: 'Clear All Diary',
-                      subtitle: 'Permanently delete every entry.',
                       icon: Icons.delete_outline,
                       danger: true,
                       onTap: () => _clearAllDiaries(context, ref),
