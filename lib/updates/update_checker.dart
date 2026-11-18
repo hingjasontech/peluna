@@ -15,7 +15,7 @@ abstract interface class UpdateChecker {
   void close();
 }
 
-/// Checks the latest public GitHub release for a newer APK.
+/// Checks the latest public GitHub release for a newer version.
 class GitHubUpdateChecker implements UpdateChecker {
   GitHubUpdateChecker({
     http.Client? client,
@@ -91,53 +91,8 @@ class GitHubUpdateChecker implements UpdateChecker {
 
     if (!latestVersion.isNewerThan(currentVersion)) return null;
 
-    final assets = data['assets'];
-    Map<String, dynamic>? apkAsset;
-    if (assets is List) {
-      for (final asset in assets) {
-        if (asset is! Map<String, dynamic>) continue;
-        final name = asset['name'];
-        if (name is String && name.toLowerCase().endsWith('.apk')) {
-          apkAsset = asset;
-          break;
-        }
-      }
-    }
-
-    if (apkAsset == null) {
-      throw const UpdateException(
-        'The latest release does not include an APK to install.',
-      );
-    }
-
-    final apkName = apkAsset['name'] as String;
-    final apkUrl = apkAsset['browser_download_url'];
-    if (apkUrl is! String) {
-      throw const UpdateException('The latest APK has no download link.');
-    }
-
-    Map<String, dynamic>? checksumAsset;
-    if (assets is List) {
-      for (final asset in assets) {
-        if (asset is! Map<String, dynamic>) continue;
-        final name = asset['name'];
-        if (name == '$apkName.sha256') {
-          checksumAsset = asset;
-          break;
-        }
-      }
-    }
-
-    final checksumUrl = checksumAsset?['browser_download_url'];
-    if (checksumUrl is! String) {
-      throw const UpdateException(
-        'The latest release has no checksum for the APK.',
-      );
-    }
-
     final releasePage = data['html_url'];
     final releaseNotes = data['body'];
-    final apkSize = apkAsset['size'];
 
     return AppUpdate(
       version: latestVersion,
@@ -145,9 +100,6 @@ class GitHubUpdateChecker implements UpdateChecker {
       releasePage: releasePage is String
           ? _secureUri(releasePage)
           : Uri.https('github.com', '/$_owner/$_repository/releases/tag/$tag'),
-      apkUrl: _secureUri(apkUrl),
-      checksumUrl: _secureUri(checksumUrl),
-      apkSize: apkSize is int ? apkSize : 0,
     );
   }
 
@@ -157,7 +109,7 @@ class GitHubUpdateChecker implements UpdateChecker {
   static Uri _secureUri(String value) {
     final uri = Uri.tryParse(value);
     if (uri == null || uri.scheme != 'https') {
-      throw const UpdateException('The release has an insecure download link.');
+      throw const UpdateException('The release has an insecure page link.');
     }
     return uri;
   }

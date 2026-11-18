@@ -25,7 +25,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final weekStart = ref.watch(weekStartProvider);
     final showScore = ref.watch(showCalendarScoreProvider);
-    final supportsSelfUpdate = ref.watch(supportsSelfUpdateProvider);
+    final supportsAppUpdates = ref.watch(supportsAppUpdatesProvider);
 
     return Align(
       alignment: Alignment.topCenter,
@@ -91,7 +91,7 @@ class SettingsPage extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (supportsSelfUpdate) const UpdateSettingsSection(),
+                if (supportsAppUpdates) const UpdateSettingsSection(),
               ],
             ),
           ],

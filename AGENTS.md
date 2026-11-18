@@ -34,7 +34,8 @@ CI pins Flutter 3.50.0 (Dart 3.14) and uses the committed lockfile. `flutter ana
 - `Diary.fromJson` intentionally throws when `date` is missing or invalid. Do not restore a `DateTime.now()` fallback; it used to overwrite today's entry during imports.
 - `lib/config/router.dart` is a 3-branch shell (`/`, `/analytics`, `/settings`); the diary editor and tags are root-navigator routes (`/diary`, `/diary/tags`).
 - `DiaryPage` intentionally blocks swipes to days without entries (except the day it opened on) and auto-saves the day being left. Preserve its custom horizontal drag handling.
-- Settings are grouped into `SettingsSection` cards (`Appearance`, `Data`, `Updates`) with `SettingsTile` rows from `lib/views/widgets/settings_section.dart`. Put new settings in the matching section, or add a new section/card, instead of a flat list of tiles. The Updates section stays gated by `supportsSelfUpdateProvider`.
+- Settings are grouped into `SettingsSection` cards (`Appearance`, `Data`, `Updates`) with `SettingsTile` rows from `lib/views/widgets/settings_section.dart`. Put new settings in the matching section, or add a new section/card, instead of a flat list of tiles. The Updates section stays gated by `supportsAppUpdatesProvider`.
+- Updates only check GitHub and open the release page in the browser. Do not reintroduce `REQUEST_INSTALL_PACKAGES`, FileProvider APK sharing, or an in-app package installer: Play Protect flags that self-update pattern as harmful.
 
 ## Tests
 

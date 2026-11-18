@@ -11,8 +11,7 @@ import 'package:peluna/data/settings_repository.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/update_providers.dart';
 import 'package:peluna/updates/update_checker.dart';
-import 'package:peluna/updates/update_downloader.dart';
-import 'package:peluna/updates/update_installer.dart';
+import 'package:peluna/updates/update_launcher.dart';
 import 'package:peluna/updates/update_models.dart';
 import 'package:peluna/views/pages/settings_page.dart';
 import 'package:peluna/views/widgets/update_dialog.dart';
@@ -94,7 +93,7 @@ void main() {
   });
 
   group('GitHubUpdateChecker', () {
-    test('returns the newer release with its APK and checksum', () async {
+    test('returns the newer release and its GitHub page', () async {
       final checker = GitHubUpdateChecker(
         client: MockClient((request) async {
           expect(
@@ -116,16 +115,9 @@ void main() {
       expect(update!.versionLabel, '1.2.0');
       expect(update.releaseNotes, 'Notes for 1.2.0');
       expect(
-        update.apkUrl.toString(),
-        'https://github.com/hingjasontech/peluna/releases/download/'
-        'v1.2.0/peluna-v1.2.0.apk',
+        update.releasePage.toString(),
+        'https://github.com/hingjasontech/peluna/releases/tag/v1.2.0',
       );
-      expect(
-        update.checksumUrl.toString(),
-        'https://github.com/hingjasontech/peluna/releases/download/'
-        'v1.2.0/peluna-v1.2.0.apk.sha256',
-      );
-      expect(update.apkSize, 4532323);
     });
 
     test('returns null for the same or an older release', () async {
@@ -165,11 +157,11 @@ void main() {
       );
     });
 
-    test('rejects a release without a checksum', () async {
+    test('falls back to the tag page when GitHub omits html_url', () async {
       final checker = GitHubUpdateChecker(
         client: MockClient(
           (_) async => http.Response(
-            jsonEncode(_releaseJson(includeChecksum: false)),
+            jsonEncode(_releaseJson(includeReleasePage: false)),
             200,
           ),
         ),
@@ -177,27 +169,23 @@ void main() {
       );
       addTearDown(checker.close);
 
-      await expectLater(
-        checker.checkForUpdate(),
-        throwsA(
-          isA<UpdateException>().having(
-            (error) => error.message,
-            'message',
-            contains('no checksum'),
-          ),
-        ),
+      final update = await checker.checkForUpdate();
+
+      expect(
+        update!.releasePage.toString(),
+        'https://github.com/hingjasontech/peluna/releases/tag/v1.2.0',
       );
     });
 
-    test('rejects insecure download links', () async {
+    test('rejects an insecure release page', () async {
       final checker = GitHubUpdateChecker(
         client: MockClient(
           (_) async => http.Response(
             jsonEncode(
               _releaseJson(
-                apkUrl:
-                    'http://github.com/hingjasontech/peluna/releases/'
-                    'download/v1.2.0/peluna-v1.2.0.apk',
+                releasePage:
+                    'http://github.com/hingjasontech/peluna/releases/tag/'
+                    'v1.2.0',
               ),
             ),
             200,
@@ -268,8 +256,8 @@ void main() {
   });
 
   group('SettingsPage updater section', () {
-    testWidgets('is hidden when self-updates are unsupported', (tester) async {
-      await tester.pumpWidget(_settingsPage(hive, supportsSelfUpdate: false));
+    testWidgets('is hidden when app updates are unsupported', (tester) async {
+      await tester.pumpWidget(_settingsPage(hive, supportsAppUpdates: false));
       await tester.pump();
 
       expect(find.text('Check for Updates'), findsNothing);
@@ -339,51 +327,42 @@ void main() {
   });
 
   group('UpdateAvailableDialog', () {
-    testWidgets('downloads the APK and opens the Android installer', (
-      tester,
-    ) async {
-      final installer = _FakeInstaller(allowed: true);
-      final downloader = _FakeDownloader('/cache/updates/peluna-update.apk');
+    testWidgets('opens the GitHub release page in the browser', (tester) async {
+      final launcher = _FakeLauncher(opened: true);
 
-      await tester.pumpWidget(
-        _dialogHost(hive, installer: installer, downloader: downloader),
-      );
+      await tester.pumpWidget(_dialogHost(hive, launcher: launcher));
 
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Download & install'));
+      await tester.tap(find.text('Get update'));
       await tester.pumpAndSettle();
 
-      expect(downloader.calls, 1);
-      expect(installer.installedPath, '/cache/updates/peluna-update.apk');
+      expect(launcher.urls, [_sampleUpdate().releasePage]);
       expect(find.text('Update available'), findsNothing);
     });
 
-    testWidgets('asks for install permission when Android blocks it', (
-      tester,
-    ) async {
-      final installer = _FakeInstaller(allowed: false);
-      final downloader = _FakeDownloader('/cache/updates/peluna-update.apk');
+    testWidgets('reports when the browser cannot be opened', (tester) async {
+      final launcher = _FakeLauncher(opened: false);
 
-      await tester.pumpWidget(
-        _dialogHost(hive, installer: installer, downloader: downloader),
-      );
+      await tester.pumpWidget(_dialogHost(hive, launcher: launcher));
 
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Download & install'));
+      await tester.tap(find.text('Get update'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Allow installs'), findsOneWidget);
-      expect(downloader.calls, 0);
+      expect(
+        find.textContaining('Could not open the release page'),
+        findsOneWidget,
+      );
+      expect(find.text('Update available'), findsOneWidget);
 
-      await tester.tap(find.text('Open settings'));
-      await tester.pump();
-
-      expect(installer.settingsOpened, 1);
-
-      await tester.tap(find.text('Later'));
+      launcher.opened = true;
+      await tester.tap(find.text('Get update'));
       await tester.pumpAndSettle();
+
+      expect(launcher.urls.length, 2);
+      expect(find.text('Update available'), findsNothing);
     });
   });
 
@@ -407,7 +386,7 @@ void main() {
 
 Widget _settingsPage(
   HiveTestHarness hive, {
-  bool supportsSelfUpdate = true,
+  bool supportsAppUpdates = true,
   UpdateChecker? checker,
 }) {
   return ProviderScope(
@@ -416,26 +395,21 @@ Widget _settingsPage(
       settingsRepositoryProvider.overrideWithValue(
         SettingsRepository(hive.settingsBox),
       ),
-      supportsSelfUpdateProvider.overrideWithValue(supportsSelfUpdate),
+      supportsAppUpdatesProvider.overrideWithValue(supportsAppUpdates),
       if (checker != null) updateCheckerProvider.overrideWithValue(checker),
     ],
     child: const MaterialApp(home: Scaffold(body: SettingsPage())),
   );
 }
 
-Widget _dialogHost(
-  HiveTestHarness hive, {
-  required UpdateInstaller installer,
-  required UpdateDownloader downloader,
-}) {
+Widget _dialogHost(HiveTestHarness hive, {required UpdateLauncher launcher}) {
   return ProviderScope(
     overrides: [
       diaryRepositoryProvider.overrideWithValue(hive.repository),
       settingsRepositoryProvider.overrideWithValue(
         SettingsRepository(hive.settingsBox),
       ),
-      updateInstallerProvider.overrideWithValue(installer),
-      updateDownloaderProvider.overrideWithValue(downloader),
+      updateLauncherProvider.overrideWithValue(launcher),
     ],
     child: MaterialApp(home: _DialogHost(update: _sampleUpdate())),
   );
@@ -448,7 +422,7 @@ Widget _app(HiveTestHarness hive, {required UpdateChecker checker}) {
       settingsRepositoryProvider.overrideWithValue(
         SettingsRepository(hive.settingsBox),
       ),
-      supportsSelfUpdateProvider.overrideWithValue(true),
+      supportsAppUpdatesProvider.overrideWithValue(true),
       updateCheckerProvider.overrideWithValue(checker),
     ],
     child: const Peluna(),
@@ -489,44 +463,16 @@ class _FakeChecker implements UpdateChecker {
   void close() {}
 }
 
-class _FakeDownloader extends UpdateDownloader {
-  _FakeDownloader(this.path);
+class _FakeLauncher implements UpdateLauncher {
+  _FakeLauncher({required this.opened});
 
-  final String path;
-  int calls = 0;
-
-  @override
-  Future<String> download(
-    AppUpdate update, {
-    void Function(double? progress)? onProgress,
-    void Function()? onVerifying,
-  }) async {
-    calls++;
-    onProgress?.call(0.5);
-    onProgress?.call(1);
-    onVerifying?.call();
-    return path;
-  }
-}
-
-class _FakeInstaller extends UpdateInstaller {
-  _FakeInstaller({required this.allowed});
-
-  final bool allowed;
-  int settingsOpened = 0;
-  String? installedPath;
+  bool opened;
+  final List<Uri> urls = [];
 
   @override
-  Future<bool> canInstall() async => allowed;
-
-  @override
-  Future<void> openInstallSettings() async {
-    settingsOpened++;
-  }
-
-  @override
-  Future<void> install(String path) async {
-    installedPath = path;
+  Future<bool> open(Uri uri) async {
+    urls.add(uri);
+    return opened;
   }
 }
 
@@ -537,42 +483,20 @@ AppUpdate _sampleUpdate() {
     releasePage: Uri.parse(
       'https://github.com/hingjasontech/peluna/releases/tag/v1.2.0',
     ),
-    apkUrl: Uri.parse(
-      'https://github.com/hingjasontech/peluna/releases/download/'
-      'v1.2.0/peluna-v1.2.0.apk',
-    ),
-    checksumUrl: Uri.parse(
-      'https://github.com/hingjasontech/peluna/releases/download/'
-      'v1.2.0/peluna-v1.2.0.apk.sha256',
-    ),
-    apkSize: 4532323,
   );
 }
 
 Map<String, dynamic> _releaseJson({
   String tag = 'v1.2.0',
-  bool includeChecksum = true,
-  String? apkUrl,
+  bool includeReleasePage = true,
+  String? releasePage,
 }) {
-  final downloadBase =
-      'https://github.com/hingjasontech/peluna/releases/download/$tag';
-
   return {
     'tag_name': tag,
     'body': 'Notes for ${tag.replaceFirst('v', '')}',
-    'html_url': 'https://github.com/hingjasontech/peluna/releases/tag/$tag',
-    'assets': [
-      {
-        'name': 'peluna-$tag.apk',
-        'browser_download_url': apkUrl ?? '$downloadBase/peluna-$tag.apk',
-        'size': 4532323,
-      },
-      if (includeChecksum)
-        {
-          'name': 'peluna-$tag.apk.sha256',
-          'browser_download_url': '$downloadBase/peluna-$tag.apk.sha256',
-          'size': 84,
-        },
-    ],
+    if (includeReleasePage)
+      'html_url':
+          releasePage ??
+          'https://github.com/hingjasontech/peluna/releases/tag/$tag',
   };
 }

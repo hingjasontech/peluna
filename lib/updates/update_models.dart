@@ -94,23 +94,17 @@ class AppVersion implements Comparable<AppVersion> {
   }
 }
 
-/// A newer GitHub release with the assets needed for an in-app update.
+/// A newer GitHub release that the user can open in a browser.
 class AppUpdate {
   const AppUpdate({
     required this.version,
     required this.releaseNotes,
     required this.releasePage,
-    required this.apkUrl,
-    required this.checksumUrl,
-    required this.apkSize,
   });
 
   final AppVersion version;
   final String releaseNotes;
   final Uri releasePage;
-  final Uri apkUrl;
-  final Uri checksumUrl;
-  final int apkSize;
 
   String get versionLabel => version.toString();
 }

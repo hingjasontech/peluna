@@ -22,7 +22,7 @@ class _PelunaState extends ConsumerState<Peluna> {
   }
 
   Future<void> _checkOnStartup() async {
-    if (!ref.read(supportsSelfUpdateProvider) ||
+    if (!ref.read(supportsAppUpdatesProvider) ||
         !ref.read(autoCheckUpdatesProvider)) {
       return;
     }

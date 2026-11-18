@@ -3,12 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/updates/update_checker.dart';
-import 'package:peluna/updates/update_downloader.dart';
-import 'package:peluna/updates/update_installer.dart';
+import 'package:peluna/updates/update_launcher.dart';
 
-/// In-app self-updates use Android's package installer, so other targets only
-/// expose the regular diary features.
-final supportsSelfUpdateProvider = Provider<bool>(
+/// Update checks point at Android APK releases, so other targets only expose
+/// the regular diary features.
+final supportsAppUpdatesProvider = Provider<bool>(
   (ref) => !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
 );
 
@@ -18,12 +17,8 @@ final updateCheckerProvider = Provider<UpdateChecker>((ref) {
   return checker;
 });
 
-final updateDownloaderProvider = Provider<UpdateDownloader>(
-  (ref) => UpdateDownloader(),
-);
-
-final updateInstallerProvider = Provider<UpdateInstaller>(
-  (ref) => const UpdateInstaller(),
+final updateLauncherProvider = Provider<UpdateLauncher>(
+  (ref) => const UrlUpdateLauncher(),
 );
 
 class AutoCheckUpdatesNotifier extends Notifier<bool> {
