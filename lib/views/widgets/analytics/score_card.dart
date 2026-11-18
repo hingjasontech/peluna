@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -329,7 +330,7 @@ class _CumulativeChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final chart = Rect.fromLTRB(42, 10, size.width - 4, size.height - 28);
+    final chart = Rect.fromLTRB(38, 10, size.width - 6, size.height - 26);
     if (chart.width <= 0 || chart.height <= 0) return;
 
     var minY = 0;
@@ -353,23 +354,6 @@ class _CumulativeChartPainter extends CustomPainter {
       return chart.bottom - t * chart.height;
     }
 
-    final gridPaint = Paint()
-      ..color = gridColor.withValues(alpha: 0.55)
-      ..strokeWidth = 1;
-
-    final ticks = <int>{minY, 0, maxY}.toList()..sort();
-    for (final tick in ticks) {
-      final y = yFor(tick);
-      canvas.drawLine(Offset(chart.left, y), Offset(chart.right, y), gridPaint);
-      _paintText(
-        canvas,
-        signedInt(tick),
-        Offset(chart.left - 8, y),
-        alignRight: true,
-        centreVertically: true,
-      );
-    }
-
     Offset pointOffset(int index) {
       final x = points.length == 1
           ? chart.center.dx
@@ -377,9 +361,86 @@ class _CumulativeChartPainter extends CustomPainter {
       return Offset(x, yFor(points[index].cumulative));
     }
 
+    final zeroY = yFor(0).clamp(chart.top, chart.bottom);
+
+    final line = Path();
+    final firstPoint = pointOffset(0);
+    line.moveTo(firstPoint.dx, firstPoint.dy);
+    for (var index = 0; index < points.length - 1; index++) {
+      final previous = pointOffset(math.max(0, index - 1));
+      final start = pointOffset(index);
+      final end = pointOffset(index + 1);
+      final next = pointOffset(math.min(points.length - 1, index + 2));
+      final control1 = start + (end - previous) / 6;
+      final control2 = end - (next - start) / 6;
+      line.cubicTo(
+        control1.dx,
+        control1.dy,
+        control2.dx,
+        control2.dy,
+        end.dx,
+        end.dy,
+      );
+    }
+
+    final area = Path.from(line)
+      ..lineTo(pointOffset(points.length - 1).dx, zeroY)
+      ..lineTo(firstPoint.dx, zeroY)
+      ..close();
+
+    canvas.save();
+    canvas.clipRect(chart);
+
+    final above = Rect.fromLTRB(chart.left, chart.top, chart.right, zeroY);
+    if (above.height > 0) {
+      canvas.save();
+      canvas.clipRect(above);
+      canvas.drawPath(
+        area,
+        Paint()
+          ..shader =
+              ui.Gradient.linear(Offset(0, chart.top), Offset(0, zeroY), [
+                positiveColor.withValues(alpha: 0.30),
+                positiveColor.withValues(alpha: 0),
+              ]),
+      );
+      canvas.restore();
+    }
+
+    final below = Rect.fromLTRB(chart.left, zeroY, chart.right, chart.bottom);
+    if (below.height > 0) {
+      canvas.save();
+      canvas.clipRect(below);
+      canvas.drawPath(
+        area,
+        Paint()
+          ..shader =
+              ui.Gradient.linear(Offset(0, zeroY), Offset(0, chart.bottom), [
+                negativeColor.withValues(alpha: 0),
+                negativeColor.withValues(alpha: 0.30),
+              ]),
+      );
+      canvas.restore();
+    }
+
+    canvas.restore();
+
+    final zeroPaint = Paint()
+      ..color = gridColor.withValues(alpha: 0.35)
+      ..strokeWidth = 1;
+    var dashStart = 0.0;
+    while (dashStart < chart.width) {
+      final dashEnd = math.min(dashStart + 2, chart.width);
+      canvas.drawLine(
+        Offset(chart.left + dashStart, zeroY),
+        Offset(chart.left + dashEnd, zeroY),
+        zeroPaint,
+      );
+      dashStart = dashEnd + 6;
+    }
+
     if (points.length == 1) {
-      final point = pointOffset(0);
-      final zeroY = yFor(0);
+      final point = firstPoint;
       canvas.drawLine(
         Offset(point.dx, zeroY),
         point,
@@ -387,72 +448,60 @@ class _CumulativeChartPainter extends CustomPainter {
           ..color = _colorFor(points[0].cumulative).withValues(alpha: 0.35)
           ..strokeWidth = 2,
       );
-    } else {
-      final positivePaint = Paint()
-        ..color = positiveColor
-        ..strokeWidth = 2.5
-        ..strokeCap = StrokeCap.round;
-      final negativePaint = Paint()
-        ..color = negativeColor
-        ..strokeWidth = 2.5
-        ..strokeCap = StrokeCap.round;
-      final neutralPaint = Paint()
-        ..color = neutralColor
-        ..strokeWidth = 2.5
-        ..strokeCap = StrokeCap.round;
-
-      void drawSegment(Offset a, Offset b, num from, num to) {
-        if (from == 0 && to == 0) {
-          canvas.drawLine(a, b, neutralPaint);
-          return;
-        }
-        if (from >= 0 && to >= 0) {
-          canvas.drawLine(a, b, positivePaint);
-          return;
-        }
-        if (from <= 0 && to <= 0) {
-          canvas.drawLine(a, b, negativePaint);
-          return;
-        }
-
-        final t = from / (from - to);
-        final crossing = Offset.lerp(a, b, t)!;
-        if (from > 0) {
-          canvas.drawLine(a, crossing, positivePaint);
-          canvas.drawLine(crossing, b, negativePaint);
-        } else {
-          canvas.drawLine(a, crossing, negativePaint);
-          canvas.drawLine(crossing, b, positivePaint);
-        }
-      }
-
-      for (var i = 1; i < points.length; i++) {
-        drawSegment(
-          pointOffset(i - 1),
-          pointOffset(i),
-          points[i - 1].cumulative,
-          points[i].cumulative,
-        );
-      }
     }
 
-    if (points.length <= 90) {
-      final dotBorder = Paint()
+    final lineAbove = Rect.fromLTRB(chart.left, chart.top, chart.right, zeroY);
+    final lineBelow = Rect.fromLTRB(
+      chart.left,
+      zeroY,
+      chart.right,
+      chart.bottom,
+    );
+    for (final (rect, color) in [
+      (lineAbove, positiveColor),
+      (lineBelow, negativeColor),
+    ]) {
+      if (rect.height <= 0) continue;
+      canvas.save();
+      canvas.clipRect(rect);
+      canvas.drawPath(
+        line,
+        Paint()
+          ..color = color.withValues(alpha: 0.12)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 11
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, 6),
+      );
+      canvas.drawPath(
+        line,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.5
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+      canvas.restore();
+    }
+
+    final lastPoint = pointOffset(points.length - 1);
+    final lastColor = _colorFor(points.last.cumulative);
+    canvas.drawCircle(
+      lastPoint,
+      9.5,
+      Paint()..color = lastColor.withValues(alpha: 0.18),
+    );
+    canvas.drawCircle(lastPoint, 4.5, Paint()..color = lastColor);
+    canvas.drawCircle(
+      lastPoint,
+      4.5,
+      Paint()
         ..color = dotBorderColor
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2;
-      for (var i = 0; i < points.length; i++) {
-        final score = points[i].score;
-        if (score == null) continue;
-        final scoreIndex = Score.getIndex(score);
-        final dotColor = scoreIndex == -1
-            ? _colorFor(points[i].cumulative)
-            : Score.colors[scoreIndex];
-        final offset = pointOffset(i);
-        canvas.drawCircle(offset, 3.2, Paint()..color = dotColor);
-        canvas.drawCircle(offset, 3.2, dotBorder);
-      }
-    }
+        ..strokeWidth = 1.2,
+    );
 
     final sameYear = points.first.date.year == points.last.date.year;
     final firstLabel = sameYear
