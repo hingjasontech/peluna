@@ -299,13 +299,8 @@ void main() {
 
       expect(find.text('7D'), findsOneWidget);
       expect(find.text('Score calendar'), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(ScoreCard),
-          matching: find.text('Awesome 1'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Awesome'), findsNothing);
+      expect(find.textContaining('Every day in this range'), findsNothing);
     });
 
     testWidgets('counts a +1 score over the full 500ms', (tester) async {
@@ -329,6 +324,86 @@ void main() {
       expect(scoreText('0'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 1));
       expect(scoreText('+1'), findsOneWidget);
+    });
+
+    testWidgets('keeps the count at 500ms when system animations are off', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      await tester.runAsync(() async {
+        await hive.put(now, _diary(now, 1));
+      });
+
+      tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+
+      await tester.pumpWidget(
+        hive.wrap(const MaterialApp(home: Scaffold(body: AnalyticsPage()))),
+      );
+      await tester.pump();
+
+      Finder scoreText(String text) => find.descendant(
+        of: find.byType(ScoreCard),
+        matching: find.text(text),
+      );
+
+      expect(scoreText('0'), findsOneWidget);
+      // Flutter normally compresses decorative animations to 25ms when the
+      // device asks for reduced motion. The score count must not collapse.
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(scoreText('0'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 399));
+      expect(scoreText('0'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(scoreText('+1'), findsOneWidget);
+    });
+
+    testWidgets('waits for the tab to become visible before counting', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      await tester.runAsync(() async {
+        await hive.put(now, _diary(now, 2));
+      });
+
+      final visible = ValueNotifier(false);
+      addTearDown(visible.dispose);
+
+      await tester.pumpWidget(
+        hive.wrap(
+          MaterialApp(
+            home: Scaffold(
+              body: ValueListenableBuilder<bool>(
+                valueListenable: visible,
+                builder: (context, enabled, child) =>
+                    TickerMode(enabled: enabled, child: child!),
+                child: const AnalyticsPage(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      Finder scoreText(String text) => find.descendant(
+        of: find.byType(ScoreCard),
+        matching: find.text(text),
+      );
+
+      // An inactive IndexedStack branch is kept alive but muted. Starting the
+      // controller there used to make it finish before the tab was ever shown.
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(scoreText('0'), findsOneWidget);
+
+      visible.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(scoreText('+1'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(scoreText('+2'), findsOneWidget);
     });
 
     testWidgets('shows the empty lifetime state without entries', (

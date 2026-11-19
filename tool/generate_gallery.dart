@@ -100,7 +100,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Diary editor for today.
-      await tester.tap(find.byIcon(Icons.edit));
+      await tester.tap(find.byIcon(Icons.add));
       await tester.pumpAndSettle();
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();

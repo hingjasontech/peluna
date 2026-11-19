@@ -43,7 +43,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.goNamed('diary'),
-        child: const Icon(Icons.edit),
+        child: const Icon(Icons.add),
       ),
       body: SingleChildScrollView(
         child: Column(

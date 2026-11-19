@@ -31,6 +31,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(TableCalendar<Diary>), findsOneWidget);
+    expect(
+      find.widgetWithIcon(FloatingActionButton, Icons.add),
+      findsOneWidget,
+    );
+    expect(find.widgetWithIcon(FloatingActionButton, Icons.edit), findsNothing);
   });
 
   testWidgets('renders ScoreCircleWidget on dates with score', (tester) async {
