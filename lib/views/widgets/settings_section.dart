@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Add new settings to an existing section when possible; create a new
 /// [SettingsSection] when the setting belongs to a different area
-/// (Appearance, Data, Updates, About, ...).
+/// (Appearance, Data, About, ...).
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     super.key,

@@ -7,6 +7,7 @@ import 'package:peluna/data/settings_repository.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/utils/external_link_launcher.dart';
 import 'package:peluna/views/pages/settings_page.dart';
+import 'package:peluna/views/widgets/about_settings_section.dart';
 
 import 'support/test_harness.dart';
 
