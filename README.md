@@ -31,8 +31,7 @@ Download the APK from the [latest release](https://github.com/hingjasontech/pelu
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for local development, tests, release
-steps, and how to regenerate the gallery.
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
