@@ -6,9 +6,6 @@ import 'package:peluna/updates/update_models.dart';
 import 'package:peluna/views/widgets/settings_section.dart';
 import 'package:peluna/views/widgets/update_dialog.dart';
 
-/// Identifies the startup update switch in widget tests.
-const Key autoCheckUpdatesSwitchKey = Key('auto-check-updates-switch');
-
 class UpdateSettingsSection extends ConsumerStatefulWidget {
   const UpdateSettingsSection({super.key});
 
@@ -47,8 +44,6 @@ class _UpdateSettingsSectionState extends ConsumerState<UpdateSettingsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final autoCheck = ref.watch(autoCheckUpdatesProvider);
-
     return SettingsSection(
       title: 'Updates',
       children: [
@@ -63,19 +58,6 @@ class _UpdateSettingsSectionState extends ConsumerState<UpdateSettingsSection> {
                 )
               : null,
           onTap: _checking ? null : _checkForUpdates,
-        ),
-        SettingsTile(
-          title: 'Check automatically on startup',
-          icon: Icons.autorenew,
-          trailing: Switch(
-            key: autoCheckUpdatesSwitchKey,
-            value: autoCheck,
-            onChanged: (value) =>
-                ref.read(autoCheckUpdatesProvider.notifier).setEnabled(value),
-          ),
-          onTap: () => ref
-              .read(autoCheckUpdatesProvider.notifier)
-              .setEnabled(!autoCheck),
         ),
       ],
     );

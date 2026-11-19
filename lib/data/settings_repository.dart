@@ -11,7 +11,6 @@ class SettingsRepository {
   static const String _showCalendarScoreKey = 'show_calendar_score';
   static const String _legacyShowCalendarMoodKey = 'show_calendar_mood';
   static const String _weekStartKey = 'week_start';
-  static const String _autoCheckUpdatesKey = 'auto_check_updates';
 
   /// Defaults to true and falls back to the legacy `show_calendar_mood` key
   /// so existing installs keep their calendar preference after the rename.
@@ -30,11 +29,4 @@ class SettingsRepository {
 
   Future<void> setWeekStart(WeekStart value) =>
       _box.put(_weekStartKey, value.name);
-
-  /// Whether the app should look for a newer GitHub release when it starts.
-  bool get autoCheckUpdates =>
-      _box.get(_autoCheckUpdatesKey, defaultValue: false) as bool;
-
-  Future<void> setAutoCheckUpdates(bool value) =>
-      _box.put(_autoCheckUpdatesKey, value);
 }

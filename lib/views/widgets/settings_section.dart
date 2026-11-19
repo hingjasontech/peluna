@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Add new settings to an existing section when possible; create a new
 /// [SettingsSection] when the setting belongs to a different area
-/// (Appearance, Data, Updates, ...).
+/// (Appearance, Data, Updates, About, ...).
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     super.key,
@@ -57,6 +57,7 @@ class SettingsTile extends StatelessWidget {
     super.key,
     required this.title,
     this.icon,
+    this.leading,
     this.trailing,
     this.onTap,
     this.danger = false,
@@ -64,6 +65,10 @@ class SettingsTile extends StatelessWidget {
 
   final String title;
   final IconData? icon;
+
+  /// A custom leading widget, for brand marks that are not in [Icons].
+  /// Takes precedence over [icon] when both are set.
+  final Widget? leading;
   final Widget? trailing;
   final VoidCallback? onTap;
 
@@ -77,7 +82,7 @@ class SettingsTile extends StatelessWidget {
 
     return ListTile(
       minVerticalPadding: 12,
-      leading: icon == null ? null : Icon(icon, color: accent),
+      leading: leading ?? (icon == null ? null : Icon(icon, color: accent)),
       title: Text(
         title,
         style: danger ? TextStyle(color: colorScheme.error) : null,

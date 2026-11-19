@@ -326,9 +326,7 @@ void main() {
       expect(scoreText('+1'), findsOneWidget);
     });
 
-    testWidgets('keeps the count at 500ms when system animations are off', (
-      tester,
-    ) async {
+    testWidgets('respects the system reduced-motion setting', (tester) async {
       final now = DateTime.now();
       await tester.runAsync(() async {
         await hive.put(now, _diary(now, 1));
@@ -351,13 +349,9 @@ void main() {
       );
 
       expect(scoreText('0'), findsOneWidget);
-      // Flutter normally compresses decorative animations to 25ms when the
-      // device asks for reduced motion. The score count must not collapse.
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(scoreText('0'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 399));
-      expect(scoreText('0'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 1));
+      // Flutter compresses normal animations to 5% (25ms) when the device
+      // asks for reduced motion. The score count follows that preference.
+      await tester.pump(const Duration(milliseconds: 30));
       expect(scoreText('+1'), findsOneWidget);
     });
 

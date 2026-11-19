@@ -6,16 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-import 'package:peluna/app.dart';
 import 'package:peluna/data/settings_repository.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/update_providers.dart';
 import 'package:peluna/updates/update_checker.dart';
-import 'package:peluna/updates/update_launcher.dart';
 import 'package:peluna/updates/update_models.dart';
+import 'package:peluna/utils/external_link_launcher.dart';
 import 'package:peluna/views/pages/settings_page.dart';
 import 'package:peluna/views/widgets/update_dialog.dart';
-import 'package:peluna/views/widgets/update_settings_section.dart';
 
 import 'support/test_harness.dart';
 
@@ -224,44 +222,13 @@ void main() {
     });
   });
 
-  group('auto-check setting', () {
-    test('defaults to off and persists changes', () async {
-      final repository = SettingsRepository(hive.settingsBox);
-
-      expect(repository.autoCheckUpdates, isFalse);
-
-      await repository.setAutoCheckUpdates(true);
-
-      expect(repository.autoCheckUpdates, isTrue);
-      expect(hive.settingsBox.get('auto_check_updates'), isTrue);
-    });
-
-    test('notifier writes through to the settings box', () {
-      final container = ProviderContainer(
-        overrides: [
-          settingsRepositoryProvider.overrideWithValue(
-            SettingsRepository(hive.settingsBox),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      expect(container.read(autoCheckUpdatesProvider), isFalse);
-
-      container.read(autoCheckUpdatesProvider.notifier).setEnabled(true);
-
-      expect(container.read(autoCheckUpdatesProvider), isTrue);
-      expect(hive.settingsBox.get('auto_check_updates'), isTrue);
-    });
-  });
-
   group('SettingsPage updater section', () {
     testWidgets('is hidden when app updates are unsupported', (tester) async {
       await tester.pumpWidget(_settingsPage(hive, supportsAppUpdates: false));
       await tester.pump();
 
       expect(find.text('Check for Updates'), findsNothing);
-      expect(find.text('Check automatically on startup'), findsNothing);
+      expect(find.text('View source code'), findsOneWidget);
     });
 
     testWidgets('checks manually and reports an up-to-date app', (
@@ -273,7 +240,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Check for Updates'), findsOneWidget);
-      expect(find.text('Check automatically on startup'), findsOneWidget);
+      expect(find.text('Check automatically on startup'), findsNothing);
 
       await tester.ensureVisible(find.text('Check for Updates'));
       await tester.pumpAndSettle();
@@ -303,26 +270,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Update available'), findsNothing);
-    });
-
-    testWidgets('toggles and persists the startup check', (tester) async {
-      await tester.pumpWidget(_settingsPage(hive));
-      await tester.pump();
-
-      final switchFinder = find.byKey(autoCheckUpdatesSwitchKey);
-      await tester.ensureVisible(switchFinder);
-      await tester.pumpAndSettle();
-
-      expect(tester.widget<Switch>(switchFinder).value, isFalse);
-
-      await tester.tap(switchFinder);
-      await tester.pump();
-
-      expect(
-        tester.widget<Switch>(find.byKey(autoCheckUpdatesSwitchKey)).value,
-        isTrue,
-      );
-      expect(hive.settingsBox.get('auto_check_updates'), isTrue);
     });
   });
 
@@ -365,23 +312,6 @@ void main() {
       expect(find.text('Update available'), findsNothing);
     });
   });
-
-  group('startup check', () {
-    testWidgets('shows the update dialog when enabled', (tester) async {
-      await SettingsRepository(hive.settingsBox).setAutoCheckUpdates(true);
-      final checker = _FakeChecker(_sampleUpdate());
-
-      await tester.pumpWidget(_app(hive, checker: checker));
-      await tester.pump();
-      await tester.pumpAndSettle();
-
-      expect(checker.calls, 1);
-      expect(find.text('Update available'), findsOneWidget);
-
-      await tester.tap(find.text('Later'));
-      await tester.pumpAndSettle();
-    });
-  });
 }
 
 Widget _settingsPage(
@@ -402,30 +332,19 @@ Widget _settingsPage(
   );
 }
 
-Widget _dialogHost(HiveTestHarness hive, {required UpdateLauncher launcher}) {
+Widget _dialogHost(
+  HiveTestHarness hive, {
+  required ExternalLinkLauncher launcher,
+}) {
   return ProviderScope(
     overrides: [
       diaryRepositoryProvider.overrideWithValue(hive.repository),
       settingsRepositoryProvider.overrideWithValue(
         SettingsRepository(hive.settingsBox),
       ),
-      updateLauncherProvider.overrideWithValue(launcher),
+      externalLinkLauncherProvider.overrideWithValue(launcher),
     ],
     child: MaterialApp(home: _DialogHost(update: _sampleUpdate())),
-  );
-}
-
-Widget _app(HiveTestHarness hive, {required UpdateChecker checker}) {
-  return ProviderScope(
-    overrides: [
-      diaryRepositoryProvider.overrideWithValue(hive.repository),
-      settingsRepositoryProvider.overrideWithValue(
-        SettingsRepository(hive.settingsBox),
-      ),
-      supportsAppUpdatesProvider.overrideWithValue(true),
-      updateCheckerProvider.overrideWithValue(checker),
-    ],
-    child: const Peluna(),
   );
 }
 
@@ -463,7 +382,7 @@ class _FakeChecker implements UpdateChecker {
   void close() {}
 }
 
-class _FakeLauncher implements UpdateLauncher {
+class _FakeLauncher implements ExternalLinkLauncher {
   _FakeLauncher({required this.opened});
 
   bool opened;

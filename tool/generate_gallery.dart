@@ -17,6 +17,7 @@ import 'package:peluna/data/settings_repository.dart';
 import 'package:peluna/models/diary_model.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/utils/utils.dart';
+import 'package:peluna/views/pages/settings_page.dart';
 
 /// Logical size of the phone viewport each screenshot is rendered at.
 const Size _screenSize = Size(390, 844);
@@ -135,6 +136,13 @@ void main() {
 
       // Settings.
       await tester.tap(find.byIcon(Icons.settings));
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => precacheImage(
+          const AssetImage('assets/github_mark.png'),
+          tester.element(find.byType(SettingsPage)),
+        ),
+      );
       await tester.pumpAndSettle();
       await snap();
 

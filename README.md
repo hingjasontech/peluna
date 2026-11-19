@@ -18,8 +18,8 @@ Offline, score-based diary app. Which
 
 Download the APK from the [latest release](https://github.com/hingjasontech/peluna/releases/latest).
 Android may warn that the app is from an unknown developer; that is expected
-for a sideloaded app. Peluna checks GitHub for updates and opens the release
-page in your browser instead of installing APKs itself.
+for a sideloaded app. You can check for updates from Settings; Peluna opens
+the release page in your browser instead of installing APKs itself.
 
 > [!NOTE]
 > The Android package was renamed from `com.example.peluna` to

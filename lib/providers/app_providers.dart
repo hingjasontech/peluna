@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peluna/data/diary_backup_service.dart';
 import 'package:peluna/data/diary_repository.dart';
 import 'package:peluna/data/settings_repository.dart';
+import 'package:peluna/utils/external_link_launcher.dart';
 
 /// Returns the current time.
 ///
@@ -31,4 +32,9 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 /// Backup/restore helpers built on top of [diaryRepositoryProvider].
 final diaryBackupServiceProvider = Provider<DiaryBackupService>(
   (ref) => DiaryBackupService(ref.watch(diaryRepositoryProvider)),
+);
+
+/// Opens links such as the GitHub repository in the platform browser.
+final externalLinkLauncherProvider = Provider<ExternalLinkLauncher>(
+  (ref) => const UrlExternalLinkLauncher(),
 );

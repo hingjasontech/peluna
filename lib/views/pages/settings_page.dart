@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:peluna/config/app_links.dart';
 import 'package:peluna/models/week_start.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
@@ -17,6 +18,9 @@ import 'package:peluna/views/widgets/week_start_menu_widget.dart';
 
 /// Identifies the score visibility switch in widget tests.
 const Key showScoreOnCalendarSwitchKey = Key('show-scores-on-calendar-switch');
+
+/// Identifies the GitHub source link in widget tests.
+const Key viewSourceCodeTileKey = Key('view-source-code-tile');
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -92,6 +96,22 @@ class SettingsPage extends ConsumerWidget {
                   ],
                 ),
                 if (supportsAppUpdates) const UpdateSettingsSection(),
+                SettingsSection(
+                  title: 'About',
+                  children: [
+                    SettingsTile(
+                      key: viewSourceCodeTileKey,
+                      title: 'View source code',
+                      leading: Image.asset(
+                        'assets/github_mark.png',
+                        width: 24,
+                        height: 24,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      onTap: () => _openSourceCode(context, ref),
+                    ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -107,6 +127,19 @@ void _showSnack(BuildContext context, String message) {
     ..showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
+}
+
+Future<void> _openSourceCode(BuildContext context, WidgetRef ref) async {
+  final opened = await ref
+      .read(externalLinkLauncherProvider)
+      .open(AppLinks.sourceCode);
+
+  if (!opened && context.mounted) {
+    _showSnack(
+      context,
+      'Could not open GitHub. Check that a browser is available.',
+    );
+  }
 }
 
 Future<void> _pickWeekStart(BuildContext context, WidgetRef ref) async {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:peluna/providers/update_providers.dart';
+import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/updates/update_models.dart';
 
 Future<void> showUpdateAvailableDialog(BuildContext context, AppUpdate update) {
@@ -35,7 +35,7 @@ class _UpdateAvailableDialogState extends ConsumerState<UpdateAvailableDialog> {
     });
 
     final opened = await ref
-        .read(updateLauncherProvider)
+        .read(externalLinkLauncherProvider)
         .open(widget.update.releasePage);
 
     if (!mounted) return;

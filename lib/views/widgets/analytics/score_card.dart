@@ -144,7 +144,8 @@ class _AnimatedScore extends StatefulWidget {
 
 class _AnimatedScoreState extends State<_AnimatedScore>
     with SingleTickerProviderStateMixin {
-  /// The count always takes this long, no matter how far the score moves.
+  /// The count takes this long when motion is enabled, no matter how far the
+  /// score moves. Flutter shortens it when the device asks for reduced motion.
   static const Duration _countDuration = Duration(milliseconds: 500);
 
   late final AnimationController _controller;
@@ -157,14 +158,7 @@ class _AnimatedScoreState extends State<_AnimatedScore>
   void initState() {
     super.initState();
     _to = widget.value;
-    _controller = AnimationController(
-      vsync: this,
-      duration: _countDuration,
-      // The score is a readable number rather than decorative motion. Without
-      // this, Flutter collapses the count to 25ms when the device has system
-      // animations disabled, which makes the score jump to its final value.
-      animationBehavior: AnimationBehavior.preserve,
-    );
+    _controller = AnimationController(vsync: this, duration: _countDuration);
   }
 
   @override
