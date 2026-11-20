@@ -44,13 +44,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- _gallery/gallery.png; then
+          git add _gallery
+          if git diff --cached --quiet -- _gallery; then
             echo "Gallery is already up to date."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add _gallery/gallery.png
-          git commit -m "chore(gallery): regenerate README gallery"
+          git commit -m "chore(gallery): regenerate README and landing screens"
           git push

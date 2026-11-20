@@ -1,0 +1,104 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "pixelRatio": 1.5
+  },
+  "grid": {
+    "file": "gallery.png",
+    "columns": 4,
+    "width": 2500,
+    "height": 3926,
+    "sha256": "4fd865c11af040928e79ca2226c9d745775e71d7b1f27eddcc4e10c41e490f44"
+  },
+  "screens": [
+    {
+      "id": "home",
+      "title": "Home calendar",
+      "file": "screens/home.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "42fc08f20700a1cfb0aa79b5c03c3466a6d2cdd7db7a8e80aa309b3ffe05764e"
+    },
+    {
+      "id": "home-scores-hidden",
+      "title": "Scores hidden",
+      "file": "screens/home-scores-hidden.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "d463a513cef5642855f81acc3295b3635feb1a5f430ea0e93354eab794880003"
+    },
+    {
+      "id": "diary",
+      "title": "Diary editor",
+      "file": "screens/diary.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "d7147b46224a5ad0c2b3e8f783038c3d999d93789988d107902afda635fc4df4"
+    },
+    {
+      "id": "score-picker",
+      "title": "Score picker",
+      "file": "screens/score-picker.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "1ae80eca7ab681f69c9e321b250b6a91109d65ea6a7f97c23c64624fc2e82208"
+    },
+    {
+      "id": "weather-picker",
+      "title": "Weather picker",
+      "file": "screens/weather-picker.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "8bb4b22113655ff9b82561a3bcbe408416276f92825a4b36bcbadcadb617d44b"
+    },
+    {
+      "id": "tags",
+      "title": "Tags editor",
+      "file": "screens/tags.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "00b105590f566594f7419d2c258766f15fbef703901242a17701354dc3cd82e1"
+    },
+    {
+      "id": "settings",
+      "title": "Settings",
+      "file": "screens/settings.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "f71e73afd5096606d36f4a490cf9c6dec11222e6f97c6f6eb43a46642f227cb6"
+    },
+    {
+      "id": "week-start",
+      "title": "Start of week",
+      "file": "screens/week-start.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "d38169243bf91c2a7cef7f977f51b35d5d61ce87310cecb8a8e5145f435c7bb3"
+    },
+    {
+      "id": "analytics",
+      "title": "Analytics",
+      "file": "screens/analytics.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "59823ad1e52bb13d68adb68f4d6e3788566040cc50a6be357cf76be70ff25279"
+    },
+    {
+      "id": "analytics-28-days",
+      "title": "28-day range",
+      "file": "screens/analytics-28-days.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "93be31afaec6597774046d8247a20e45e72297c2d455a7bfc4ae65031437b7c7"
+    },
+    {
+      "id": "analytics-calendar",
+      "title": "Analytics calendar",
+      "file": "screens/analytics-calendar.png",
+      "width": 585,
+      "height": 1266,
+      "sha256": "2c1c04c2183e31ca58b6f15c35deacf8c95aca3e584ce86298c9bbf02b2cc3da"
+    }
+  ]
+}

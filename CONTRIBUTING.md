@@ -28,11 +28,13 @@ widgets, in dark mode at phone size, with sample data for the current month:
 flutter test tool/generate_gallery.dart
 ```
 
-This rewrites `_gallery/gallery.png`. The generator lives in
-`tool/generate_gallery.dart`; edit the capture list there to add, remove or
-reorder screens. The `Gallery` GitHub Actions workflow also runs it on pushes
-to `main` that touch `lib/` and commits the refreshed image, so the README
-never drifts from the app.
+This rewrites `_gallery/gallery.png`, `_gallery/screens/*.png`, and
+`_gallery/manifest.json`. The generator lives in `tool/generate_gallery.dart`;
+edit the capture list there to add, remove or reorder screens. Each screen gets
+its own PNG for the landing page, while `manifest.json` carries stable ids,
+titles, dimensions and hashes. The `Gallery` GitHub Actions workflow also runs
+it on pushes to `main` that touch `lib/` and commits the refreshed assets, so
+the README and site never drift from the app.
 
 ## Landing hero
 
@@ -44,15 +46,30 @@ flutter test tool/generate_landing_hero.dart
 ```
 
 This writes `build/landing/home.png`, `og.png`, and `manifest.json`. The
-`publish-hero` job in `Android Release` runs after a successful `v*` release
-and pushes those files to the site repo, skipping the push when the images are
-byte-identical.
+`publish-hero` job in `Android Release` runs after a successful `v*` release,
+regenerates the per-screen gallery, and pushes both sets of assets to the site
+repo, skipping the push when every file is byte-identical.
+
+On the site, the files land in:
+
+```text
+src/assets/hero/home.png
+src/assets/hero/manifest.json
+src/assets/og/og.png
+src/assets/gallery/gallery.png
+src/assets/gallery/manifest.json
+src/assets/gallery/screens/<id>.png
+```
+
+Use the gallery manifest to render the screens in order; do not crop the
+composite `gallery.png`.
 
 One-time site repo setup:
 
 1. Create the Astro repo with placeholders at `src/assets/hero/home.png` and
-   `src/assets/og/og.png`. The workflow also writes
-   `src/assets/hero/manifest.json`.
+   `src/assets/og/og.png`. The workflow also writes the hero manifest and the
+   `src/assets/gallery/` tree; add placeholder gallery files there too if the
+   site imports the gallery before the first release.
 2. Generate a deploy key outside this repo:
 
    ```sh

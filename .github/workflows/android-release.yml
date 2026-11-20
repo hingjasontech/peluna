@@ -149,9 +149,10 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
 
-  # Publishes the landing-page hero to the separate site repo, but only when
-  # the rendered home screen actually changed. The job stays skipped until the
-  # SITE_REPO repository variable and SITE_DEPLOY_KEY secret are configured.
+  # Publishes the landing-page assets (hero, OG image, and per-screen gallery)
+  # to the separate site repo, but only when the rendered UI actually changed.
+  # The job stays skipped until the SITE_REPO repository variable and
+  # SITE_DEPLOY_KEY secret are configured.
   publish-hero:
     needs: release
     if: ${{ vars.SITE_REPO != '' }}
@@ -185,7 +186,10 @@ jobs:
           export HERO_COMMIT="$(git rev-parse HEAD)"
           flutter test --no-pub tool/generate_landing_hero.dart
 
-      - name: Publish hero to the site repo
+      - name: Generate gallery screens
+        run: flutter test --no-pub tool/generate_gallery.dart
+
+      - name: Publish landing assets to the site repo
         env:
           SITE_REPO: ${{ vars.SITE_REPO }}
           SITE_DEPLOY_KEY: ${{ secrets.SITE_DEPLOY_KEY }}
@@ -207,20 +211,27 @@ jobs:
           changed=0
           cmp -s build/landing/home.png site-repo/src/assets/hero/home.png || changed=1
           cmp -s build/landing/og.png site-repo/src/assets/og/og.png || changed=1
+          cmp -s _gallery/gallery.png site-repo/src/assets/gallery/gallery.png || changed=1
+          cmp -s _gallery/manifest.json site-repo/src/assets/gallery/manifest.json || changed=1
+          diff -rq _gallery/screens site-repo/src/assets/gallery/screens >/dev/null || changed=1
 
           if [ "$changed" -eq 0 ]; then
-            echo "Landing hero is unchanged; skipping."
+            echo "Landing assets are unchanged; skipping."
             exit 0
           fi
 
-          mkdir -p site-repo/src/assets/hero site-repo/src/assets/og
+          mkdir -p site-repo/src/assets/hero site-repo/src/assets/og site-repo/src/assets/gallery
           cp build/landing/home.png site-repo/src/assets/hero/home.png
           cp build/landing/og.png site-repo/src/assets/og/og.png
           cp build/landing/manifest.json site-repo/src/assets/hero/manifest.json
+          cp _gallery/gallery.png site-repo/src/assets/gallery/gallery.png
+          cp _gallery/manifest.json site-repo/src/assets/gallery/manifest.json
+          rm -rf site-repo/src/assets/gallery/screens
+          cp -R _gallery/screens site-repo/src/assets/gallery/screens
 
           cd site-repo
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/assets/hero src/assets/og
-          git commit -m "chore(hero): refresh from ${RELEASE_TAG}"
+          git add src/assets/hero src/assets/og src/assets/gallery
+          git commit -m "chore(landing): refresh assets from ${RELEASE_TAG}"
           git push

@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -31,8 +33,17 @@ const double _gap = 32;
 const double _screenRadius = 20;
 const Color _background = Color(0xFF0B0B0F);
 
+/// The composed README image and the per-screen assets share this directory.
+const String _outputDir = '_gallery';
+const String _screensDir = '$_outputDir/screens';
+
+/// One captured screen, named so the landing page can use it on its own.
+typedef _GalleryScreen = ({String id, String title, ui.Image image});
+
 void main() {
-  testWidgets('generates the README gallery', (tester) async {
+  testWidgets('generates the README gallery and landing screens', (
+    tester,
+  ) async {
     await tester.runAsync(_loadSdkFonts);
 
     final previousPlatform = debugDefaultTargetPlatformOverride;
@@ -48,7 +59,7 @@ void main() {
 
     Box<Diary>? diaryBox;
     Box? settingsBox;
-    final screenshots = <ui.Image>[];
+    final screens = <_GalleryScreen>[];
 
     try {
       await tester.runAsync(() async {
@@ -75,25 +86,25 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      Future<void> snap() async {
+      Future<void> snap(String id, String title) async {
         final image = await tester.runAsync(() async {
           final boundary =
               captureKey.currentContext!.findRenderObject()!
                   as RenderRepaintBoundary;
           return boundary.toImage(pixelRatio: _pixelRatio);
         });
-        screenshots.add(image!);
+        screens.add((id: id, title: title, image: image!));
       }
 
       // Home: calendar with scores and the selected day's diary card.
-      await snap();
+      await snap('home', 'Home calendar');
 
       // Home: score circles hidden with the eye button.
       await tester.tap(find.byIcon(Icons.visibility));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('home-scores-hidden', 'Scores hidden');
 
       await tester.tap(find.byIcon(Icons.visibility_off));
       await tester.pumpAndSettle();
@@ -105,26 +116,26 @@ void main() {
       await tester.pumpAndSettle();
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
-      await snap();
+      await snap('diary', 'Diary editor');
 
       // Score picker.
       await tester.tap(find.byIcon(Icons.score));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('score-picker', 'Score picker');
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
       // Weather picker.
       await tester.tap(find.byIcon(Icons.sunny));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('weather-picker', 'Weather picker');
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
       // Tags editor.
       await tester.tap(find.byIcon(Icons.tag));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('tags', 'Tags editor');
 
       // Back to the diary, then home.
       await tester.tap(find.byType(BackButton));
@@ -144,51 +155,44 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await snap();
+      await snap('settings', 'Settings');
 
       // Start of Week picker.
       await tester.tap(find.text('Start of Week'));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('week-start', 'Start of week');
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
       // Analytics: lifetime summary, then a trailing range.
       router.go('/analytics');
       await tester.pumpAndSettle();
-      await snap();
+      await snap('analytics', 'Analytics');
 
       await tester.tap(find.text('Lifetime'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('28D'));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('analytics-28-days', '28-day range');
 
       // Analytics: calendar and score mix below the fold.
       await tester.drag(find.byType(ListView).first, const Offset(0, -760));
       await tester.pumpAndSettle();
-      await snap();
+      await snap('analytics-calendar', 'Analytics calendar');
 
       router.go('/');
       await tester.pumpAndSettle();
 
       await tester.runAsync(() async {
-        final gallery = await _composeGallery(screenshots);
-        final byteData = await gallery.toByteData(
-          format: ui.ImageByteFormat.png,
-        );
+        final gallery = await _composeGallery([
+          for (final screen in screens) screen.image,
+        ]);
+        await _writeGallery(screens, gallery);
         gallery.dispose();
-
-        final outputDir = Directory('_gallery');
-        if (!outputDir.existsSync()) {
-          outputDir.createSync(recursive: true);
-        }
-        final outputFile = File('_gallery${Platform.pathSeparator}gallery.png');
-        await outputFile.writeAsBytes(byteData!.buffer.asUint8List());
       });
     } finally {
-      for (final screenshot in screenshots) {
-        screenshot.dispose();
+      for (final screen in screens) {
+        screen.image.dispose();
       }
       await tester.runAsync(() async {
         await diaryBox?.close();
@@ -327,6 +331,70 @@ Future<ui.Image> _composeGallery(List<ui.Image> screenshots) async {
   final image = await picture.toImage(width, height);
   picture.dispose();
   return image;
+}
+
+/// Writes the composed grid, one PNG per screen, and a manifest the landing
+/// page can use to place screens individually without hard-coding the order.
+Future<void> _writeGallery(
+  List<_GalleryScreen> screens,
+  ui.Image gallery,
+) async {
+  final screensDir = Directory(_screensDir);
+  screensDir.createSync(recursive: true);
+
+  final screenEntries = <Map<String, Object?>>[];
+  for (final screen in screens) {
+    final bytes = await _encodePng(screen.image);
+    await File('$_screensDir/${screen.id}.png').writeAsBytes(bytes);
+    screenEntries.add({
+      'id': screen.id,
+      'title': screen.title,
+      'file': 'screens/${screen.id}.png',
+      'width': screen.image.width,
+      'height': screen.image.height,
+      'sha256': sha256.convert(bytes).toString(),
+    });
+  }
+
+  // Drop screens that were removed from the capture list.
+  final expectedNames = {for (final screen in screens) '${screen.id}.png'};
+  for (final entity in screensDir.listSync()) {
+    if (entity is File &&
+        !expectedNames.contains(entity.uri.pathSegments.last)) {
+      entity.deleteSync();
+    }
+  }
+
+  final galleryBytes = await _encodePng(gallery);
+  await File('$_outputDir/gallery.png').writeAsBytes(galleryBytes);
+
+  final manifest = <String, Object?>{
+    'viewport': {
+      'width': _screenSize.width.toInt(),
+      'height': _screenSize.height.toInt(),
+      'pixelRatio': _pixelRatio,
+    },
+    'grid': {
+      'file': 'gallery.png',
+      'columns': _columns,
+      'width': gallery.width,
+      'height': gallery.height,
+      'sha256': sha256.convert(galleryBytes).toString(),
+    },
+    'screens': screenEntries,
+  };
+
+  await File(
+    '$_outputDir/manifest.json',
+  ).writeAsString('${const JsonEncoder.withIndent('  ').convert(manifest)}\n');
+}
+
+Future<Uint8List> _encodePng(ui.Image image) async {
+  final data = await image.toByteData(format: ui.ImageByteFormat.png);
+  if (data == null) {
+    throw StateError('Could not encode the rendered image as PNG.');
+  }
+  return data.buffer.asUint8List();
 }
 
 /// Loads Roboto and Material Icons from the Flutter SDK, because widget tests
