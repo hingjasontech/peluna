@@ -79,12 +79,13 @@ One-time site repo setup:
 3. Add `peluna_hero_deploy.pub` to the **site repo** as a deploy key with write
    access.
 4. Add the private key as the `SITE_DEPLOY_KEY` secret in this repo, and a
-   repository variable `SITE_REPO` set to `owner/repo`.
-5. Make the site repo deploy on push to its default branch, or connect it to
-   Vercel/Netlify's Git integration.
+   repository variable `SITE_REPO` set to `hingjasontech/peluna-website`.
+5. Connect the site repo to Cloudflare Workers so pushes to its default branch
+   deploy to https://peluna.voidcord.com.
 
-`publish-hero` is skipped until `SITE_REPO` is set, so the release workflow is
-safe to keep before the site repo exists.
+`SITE_REPO` and `SITE_DEPLOY_KEY` are configured, so releases publish the
+landing assets automatically. If `SITE_REPO` is unset, `publish-hero` is
+skipped.
 
 ## Releasing
 
