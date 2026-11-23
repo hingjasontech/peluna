@@ -211,6 +211,12 @@ jobs:
           changed=0
           cmp -s build/landing/home.png site-repo/src/assets/hero/home.png || changed=1
           cmp -s build/landing/og.png site-repo/src/assets/og/og.png || changed=1
+          # The site shows appVersion from this manifest, so update it even
+          # when the screenshots are byte-identical (for example, a same-day
+          # patch release).
+          build_version="$(sed -n 's/.*"appVersion": "\([^"]*\)".*/\1/p' build/landing/manifest.json | head -n1)"
+          site_version="$(sed -n 's/.*"appVersion": "\([^"]*\)".*/\1/p' site-repo/src/assets/hero/manifest.json | head -n1)"
+          [ "$build_version" = "$site_version" ] || changed=1
           cmp -s _gallery/gallery.png site-repo/src/assets/gallery/gallery.png || changed=1
           cmp -s _gallery/manifest.json site-repo/src/assets/gallery/manifest.json || changed=1
           diff -rq _gallery/screens site-repo/src/assets/gallery/screens >/dev/null || changed=1

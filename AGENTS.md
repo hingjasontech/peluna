@@ -55,7 +55,7 @@ CI pins Flutter 3.50.0 (Dart 3.14) and uses the committed lockfile. `flutter ana
 
 - `tool/generate_landing_hero.dart` renders the real home screen at 390×844 @2x with a pinned Nov 10–17, 2026 fixture into `build/landing/` (`home.png`, `og.png`, `manifest.json`). Run `flutter test tool/generate_landing_hero.dart`.
 - The pinned date is intentional: it makes a byte-level image diff mean "the home page UI changed". Without it, the rolling calendar would make every release look changed. `nowProvider` exists so the generator can pin "today" as well.
-- The `publish-hero` job in `android-release.yml` runs after a successful `v*` release, regenerates the gallery, and pushes the hero, OG image, and gallery assets to `hingjasontech/peluna-website` only when their bytes changed. The `SITE_REPO` repository variable and `SITE_DEPLOY_KEY` secret are configured; the site repo is connected to Cloudflare, so its default branch redeploys automatically.
+- The `publish-hero` job in `android-release.yml` runs after a successful `v*` release, regenerates the gallery, and pushes the hero, OG image, and gallery assets to `hingjasontech/peluna-website` only when the rendered assets or the app version changed. The `SITE_REPO` repository variable and `SITE_DEPLOY_KEY` secret are configured; the site repo is connected to Cloudflare, so its default branch redeploys automatically.
 - Never hand-edit the published hero; change the widget or the fixture and regenerate.
 
 ## Releases
