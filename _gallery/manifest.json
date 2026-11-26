@@ -9,7 +9,7 @@
     "columns": 4,
     "width": 2500,
     "height": 3926,
-    "sha256": "b3c71ea9156ef8f9e79de2cfc10b9a447a2ff2365aa6e8dc896c7ea526899b0e"
+    "sha256": "c3c5227cb1b1ad51dbdf732657612d41624a32869c68841524c3b46184444c88"
   },
   "screens": [
     {
@@ -18,7 +18,7 @@
       "file": "screens/home.png",
       "width": 585,
       "height": 1266,
-      "sha256": "69b5fd8393901acf11cc3d23f9d063b28e28bddf5c33ce206c240533dcbd3d5d"
+      "sha256": "7f182f64f605d693d24309df54816c7e46e41235ac24e9b004f306092f76b53d"
     },
     {
       "id": "home-scores-hidden",
@@ -26,7 +26,7 @@
       "file": "screens/home-scores-hidden.png",
       "width": 585,
       "height": 1266,
-      "sha256": "2deeec8e1892efaead04cae1be6b942f196fc4aea6da1c8e9e053fd3edeaf47a"
+      "sha256": "bfbdc3687cf8f7eb5003a54da1b92a5312e7be218145add27dec89992e256f32"
     },
     {
       "id": "diary",
@@ -34,7 +34,7 @@
       "file": "screens/diary.png",
       "width": 585,
       "height": 1266,
-      "sha256": "6797a097b48d49e7b31f9e5efda808eb4f32c39b57f16f48b3ac2c60817299ed"
+      "sha256": "10552a286858dcae485a746fe9bfb870d0f247e81aaa98423a54e271825d032c"
     },
     {
       "id": "score-picker",
@@ -42,7 +42,7 @@
       "file": "screens/score-picker.png",
       "width": 585,
       "height": 1266,
-      "sha256": "e7e1777951bbcf1272d932b2a8c05aa15c9db378a56e8cb55abba21abca80bec"
+      "sha256": "c7e8a2db18ce2f795b87b1a6f9a9e56654e1844d23fb860a103c5455ae8f8276"
     },
     {
       "id": "weather-picker",
@@ -50,7 +50,7 @@
       "file": "screens/weather-picker.png",
       "width": 585,
       "height": 1266,
-      "sha256": "73dcd061920f8db5b4b13a624cd2e2fd4f7ba2dfbe9cc06d63c2fc3a308c4bc7"
+      "sha256": "50f2efcf05d6fe698bb19268e697d33cf9a6aa89c7de73d221415196df450c56"
     },
     {
       "id": "tags",
@@ -58,7 +58,7 @@
       "file": "screens/tags.png",
       "width": 585,
       "height": 1266,
-      "sha256": "990094309d5b3e4455739e711d4582511b64e01ed3225639c7eced03d2cad1c9"
+      "sha256": "9d57bd2ebcc1fe5f70c15872c045647c00fd6640df56bf4b12495b29751212f7"
     },
     {
       "id": "settings",
@@ -82,7 +82,7 @@
       "file": "screens/analytics.png",
       "width": 585,
       "height": 1266,
-      "sha256": "f8da45230542ab78d6cefb1af393d5549cd7e03bdbd1e1da0227190841a3b5a5"
+      "sha256": "5778c28a9d26e44fb3baf6cedcc26b55c03de45f747183992375ddf85be4ceee"
     },
     {
       "id": "analytics-28-days",
@@ -90,7 +90,7 @@
       "file": "screens/analytics-28-days.png",
       "width": 585,
       "height": 1266,
-      "sha256": "0c6d5d8b7d554e749c59397a4f71b60c30210723d8a48dc93d6ef815236aba2b"
+      "sha256": "6068a952a926475119eb2692ff1261aa728bd78da2cc50cf0b24e0e8587ed617"
     },
     {
       "id": "analytics-calendar",
@@ -98,7 +98,7 @@
       "file": "screens/analytics-calendar.png",
       "width": 585,
       "height": 1266,
-      "sha256": "9db0ea0f37de73a16b9b0c8f1595ba024f3b07ae080649ebc539bf9215d12769"
+      "sha256": "27243fe7b7e2078902ba60f90aa064b794ee1c5885a3be73bbdfabdca3a6ab32"
     }
   ]
 }
