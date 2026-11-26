@@ -9,7 +9,7 @@
     "columns": 4,
     "width": 2500,
     "height": 3926,
-    "sha256": "c3c5227cb1b1ad51dbdf732657612d41624a32869c68841524c3b46184444c88"
+    "sha256": "b5a14dc4900a8f1605607602f830cf3c265111fd9c647ccf2153fd765d53f0e4"
   },
   "screens": [
     {
@@ -34,7 +34,7 @@
       "file": "screens/diary.png",
       "width": 585,
       "height": 1266,
-      "sha256": "10552a286858dcae485a746fe9bfb870d0f247e81aaa98423a54e271825d032c"
+      "sha256": "33e468c4595e715645049d934a78dda1cc357f33dfaf8c3c66d76748387dec47"
     },
     {
       "id": "score-picker",
@@ -42,7 +42,7 @@
       "file": "screens/score-picker.png",
       "width": 585,
       "height": 1266,
-      "sha256": "c7e8a2db18ce2f795b87b1a6f9a9e56654e1844d23fb860a103c5455ae8f8276"
+      "sha256": "6c046277f7762459eda3a69e7b7e9ae289a373293da5670245f4f6c1e85d1563"
     },
     {
       "id": "weather-picker",
@@ -50,7 +50,7 @@
       "file": "screens/weather-picker.png",
       "width": 585,
       "height": 1266,
-      "sha256": "50f2efcf05d6fe698bb19268e697d33cf9a6aa89c7de73d221415196df450c56"
+      "sha256": "caffb79b2882034c53d26faee1763981534f1cc642988c2d866750d15c6c793c"
     },
     {
       "id": "tags",
