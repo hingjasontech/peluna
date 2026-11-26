@@ -260,7 +260,7 @@ class _WeekdayBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        weekdayName(date),
+        weekdayShortName(date),
         style: theme.textTheme.labelSmall?.copyWith(
           color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,

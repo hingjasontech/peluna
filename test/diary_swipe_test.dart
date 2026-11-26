@@ -59,12 +59,12 @@ void main() {
     });
 
     await pumpDiary(tester, today);
-    expect(find.text('Wednesday'), findsOneWidget);
+    expect(find.text('Wed'), findsOneWidget);
 
     await tester.drag(find.byType(PageView), const Offset(-600, 0));
     await tester.pumpAndSettle();
-    expect(find.text('Thursday'), findsOneWidget);
-    expect(find.text('Wednesday'), findsNothing);
+    expect(find.text('Thu'), findsOneWidget);
+    expect(find.text('Wed'), findsNothing);
   });
 
   testWidgets('swiping moves to the next and previous day', (tester) async {
