@@ -5,6 +5,7 @@ import 'package:peluna/config/app_links.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/update_providers.dart';
 import 'package:peluna/updates/update_models.dart';
+import 'package:peluna/views/widgets/app_snack_bar.dart';
 import 'package:peluna/views/widgets/settings_section.dart';
 import 'package:peluna/views/widgets/update_dialog.dart';
 
@@ -32,15 +33,18 @@ class _AboutSettingsSectionState extends ConsumerState<AboutSettingsSection> {
       setState(() => _checking = false);
 
       if (update == null) {
-        _showSnack(context, 'Peluna is up to date.');
+        AppSnackBar.show(context, 'Peluna is up to date.');
       } else {
         await showUpdateAvailableDialog(context, update);
       }
     } on UpdateException catch (error) {
-      if (mounted) _showSnack(context, error.message);
+      if (mounted) AppSnackBar.show(context, error.message);
     } catch (_) {
       if (mounted) {
-        _showSnack(context, 'Could not check for updates. Try again later.');
+        AppSnackBar.show(
+          context,
+          'Could not check for updates. Try again later.',
+        );
       }
     } finally {
       if (mounted && _checking) setState(() => _checking = false);
@@ -53,7 +57,7 @@ class _AboutSettingsSectionState extends ConsumerState<AboutSettingsSection> {
         .open(AppLinks.sourceCode);
 
     if (!opened && mounted) {
-      _showSnack(
+      AppSnackBar.show(
         context,
         'Could not open GitHub. Check that a browser is available.',
       );
@@ -94,12 +98,4 @@ class _AboutSettingsSectionState extends ConsumerState<AboutSettingsSection> {
       ],
     );
   }
-}
-
-void _showSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..clearSnackBars()
-    ..showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
 }

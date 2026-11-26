@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:peluna/providers/settings_providers.dart';
+import 'package:peluna/views/widgets/app_snack_bar.dart';
 
 /// Eye button that toggles score visibility on the calendar and persists it.
 class ScoreVisibilityToggle extends ConsumerWidget {
@@ -17,15 +18,7 @@ class ScoreVisibilityToggle extends ConsumerWidget {
       onPressed: () {
         final newVisibility = !showScore;
         ref.read(showCalendarScoreProvider.notifier).setVisible(newVisibility);
-        ScaffoldMessenger.of(context)
-          ..clearSnackBars()
-          ..showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              content: Text(newVisibility ? 'Show score' : 'Hide score'),
-            ),
-          );
+        AppSnackBar.show(context, newVisibility ? 'Show score' : 'Hide score');
       },
     );
   }

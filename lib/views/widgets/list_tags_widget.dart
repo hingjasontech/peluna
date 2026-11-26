@@ -1,35 +1,22 @@
 import 'package:flutter/material.dart';
 
-class ListTagsWidget extends StatefulWidget {
+import 'package:peluna/views/widgets/tag_pill.dart';
+
+class ListTagsWidget extends StatelessWidget {
   const ListTagsWidget({super.key, this.tags});
 
   final List<String>? tags;
 
   @override
-  State<ListTagsWidget> createState() => _HorizontalListTagState();
-}
-
-class _HorizontalListTagState extends State<ListTagsWidget> {
-  @override
   Widget build(BuildContext context) {
-    // add scrollable horizontal list
+    // A scrollable horizontal row of the day's tags.
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         spacing: 12,
-        children:
-            widget.tags
-                ?.map(
-                  (tag) => Chip(
-                    label: Text('#$tag'),
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    side: BorderSide.none,
-                  ),
-                )
-                .toList() ??
-            [],
+        children: [
+          for (final tag in tags ?? const <String>[]) TagPill(tag: tag),
+        ],
       ),
     );
   }

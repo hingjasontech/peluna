@@ -37,6 +37,10 @@ const Color _background = Color(0xFF0B0B0F);
 const String _outputDir = '_gallery';
 const String _screensDir = '$_outputDir/screens';
 
+/// Long enough for a snackbar to finish showing and animating out, so it never
+/// covers the control the next step taps.
+const Duration _snackBarWait = Duration(seconds: 4);
+
 /// One captured screen, named so the landing page can use it on its own.
 typedef _GalleryScreen = ({String id, String title, ui.Image image});
 
@@ -102,13 +106,13 @@ void main() {
       // Home: score circles hidden with the eye button.
       await tester.tap(find.byIcon(Icons.visibility));
       await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(_snackBarWait);
       await tester.pumpAndSettle();
       await snap('home-scores-hidden', 'Scores hidden');
 
       await tester.tap(find.byIcon(Icons.visibility_off));
       await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(_snackBarWait);
       await tester.pumpAndSettle();
 
       // Diary editor for today.
@@ -142,7 +146,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(_snackBarWait);
       await tester.pumpAndSettle();
 
       // Settings.

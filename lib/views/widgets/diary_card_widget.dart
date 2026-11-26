@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:peluna/config/constant.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/diary_providers.dart';
+import 'package:peluna/views/widgets/app_snack_bar.dart';
 import 'package:peluna/views/widgets/score_circle_widget.dart';
 
 class DiaryCardWidget extends ConsumerWidget {
@@ -67,14 +68,7 @@ class DiaryCardWidget extends ConsumerWidget {
 
     final messenger = ScaffoldMessenger.of(context);
     await ref.read(diaryRepositoryProvider).delete(date);
-    messenger
-      ..clearSnackBars()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text('Diary deleted.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    AppSnackBar.showWith(messenger, 'Diary deleted.');
   }
 
   @override

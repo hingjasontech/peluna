@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:peluna/providers/diary_providers.dart';
+import 'package:peluna/views/widgets/tag_pill.dart';
 
 class TagsPage extends ConsumerStatefulWidget {
   const TagsPage({super.key, this.initialTags});
@@ -107,18 +108,7 @@ class _TagsPageState extends ConsumerState<TagsPage> {
                     // order the tags were added in.
                     final tagIndex = _tags.length - 1 - index;
                     return ListTile(
-                      title: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(32),
-                              color: theme.colorScheme.primaryContainer,
-                            ),
-                            child: Text('#${_tags[tagIndex]}'),
-                          ),
-                        ],
-                      ),
+                      title: Row(children: [TagPill(tag: _tags[tagIndex])]),
                       leading: IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () => _removeTag(tagIndex),

@@ -59,18 +59,13 @@ class ScoreCard extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: _AnimatedScore(
-                      // Restart the count from zero whenever the selected
-                      // period changes, even if the net score happens to be
-                      // the same.
-                      key: ValueKey(
-                        '${summary.start.millisecondsSinceEpoch}:'
-                        '${summary.end.millisecondsSinceEpoch}',
-                      ),
-                      value: summary.netScore,
+                    child: Text(
+                      signedInt(summary.netScore),
+                      maxLines: 1,
                       style: theme.textTheme.displayLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         height: 1,
+                        color: scoreColor(summary.netScore),
                       ),
                     ),
                   ),
@@ -128,91 +123,6 @@ class ScoreCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _AnimatedScore extends StatefulWidget {
-  const _AnimatedScore({super.key, required this.value, required this.style});
-
-  final int value;
-  final TextStyle? style;
-
-  @override
-  State<_AnimatedScore> createState() => _AnimatedScoreState();
-}
-
-class _AnimatedScoreState extends State<_AnimatedScore>
-    with SingleTickerProviderStateMixin {
-  /// The count takes this long when motion is enabled, no matter how far the
-  /// score moves. Flutter shortens it when the device asks for reduced motion.
-  static const Duration _countDuration = Duration(milliseconds: 500);
-
-  late final AnimationController _controller;
-  int _from = 0;
-  late int _to;
-  bool _tickerEnabled = true;
-  bool _pendingStart = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _to = widget.value;
-    _controller = AnimationController(vsync: this, duration: _countDuration);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _tickerEnabled = TickerMode.valuesOf(context).enabled;
-    if (_tickerEnabled && _pendingStart) {
-      _pendingStart = false;
-      _controller.forward(from: 0);
-    }
-  }
-
-  /// Advances one point at a time, with the final point landing on the last
-  /// frame so even a +1 change uses the full [_countDuration].
-  int get _displayedValue {
-    final delta = _to - _from;
-    if (delta == 0) return _to;
-
-    final steps = delta.abs();
-    final completed = (_controller.value * steps).floor();
-    return _from + delta.sign * math.min(completed, steps);
-  }
-
-  @override
-  void didUpdateWidget(covariant _AnimatedScore oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.value == widget.value) return;
-    _from = _displayedValue;
-    _to = widget.value;
-    _pendingStart = true;
-    if (_tickerEnabled) {
-      _pendingStart = false;
-      _controller.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final displayed = _displayedValue;
-        return Text(
-          signedInt(displayed),
-          maxLines: 1,
-          style: widget.style?.copyWith(color: scoreColor(displayed)),
-        );
-      },
     );
   }
 }

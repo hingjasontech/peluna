@@ -25,6 +25,12 @@ CI pins Flutter 3.50.0 (Dart 3.14) and uses the committed lockfile. `flutter ana
 
 - Peluna is a score-based diary: the daily `-2..2` rating is always called a **score**, never a mood. `Diary.score` is Hive field index `2`; do not change that index. Old backups and settings may still use the legacy `mood` / `show_calendar_mood` keys, which `Diary.fromJson` and `SettingsRepository` accept as fallbacks.
 
+## UI conventions
+
+- Show snackbars through `AppSnackBar.show` / `AppSnackBar.showWith` in `lib/views/widgets/app_snack_bar.dart`. They share one floating style and duration; do not build `SnackBar` directly.
+- Tags use `TagPill` in both the diary editor and the tags page so the pill radius, padding, and colors stay identical.
+- The analytics page is intentionally animation-free. Keep the net score static instead of counting up.
+
 ## Wiring
 
 - `lib/main.dart` opens the `diaries` and `settings` Hive boxes and overrides `diaryRepositoryProvider` / `settingsRepositoryProvider`. Those providers throw until overridden, so widget tests must use `HiveTestHarness` or provide equivalent overrides.

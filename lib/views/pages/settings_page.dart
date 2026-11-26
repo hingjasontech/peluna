@@ -11,6 +11,7 @@ import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/settings_providers.dart';
 import 'package:peluna/utils/utils.dart';
 import 'package:peluna/views/widgets/about_settings_section.dart';
+import 'package:peluna/views/widgets/app_snack_bar.dart';
 import 'package:peluna/views/widgets/settings_section.dart';
 import 'package:peluna/views/widgets/week_start_menu_widget.dart';
 
@@ -99,14 +100,6 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
-void _showSnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..clearSnackBars()
-    ..showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
-}
-
 Future<void> _pickWeekStart(BuildContext context, WidgetRef ref) async {
   final selected = await showDialog<WeekStart>(
     context: context,
@@ -118,7 +111,7 @@ Future<void> _pickWeekStart(BuildContext context, WidgetRef ref) async {
   ref.read(weekStartProvider.notifier).select(selected);
 
   if (context.mounted) {
-    _showSnack(context, 'Week starts on ${selected.label}');
+    AppSnackBar.show(context, 'Week starts on ${selected.label}');
   }
 }
 
@@ -126,7 +119,7 @@ Future<void> _exportDiaries(BuildContext context, WidgetRef ref) async {
   final backup = ref.read(diaryBackupServiceProvider);
 
   if (backup.isEmpty) {
-    _showSnack(context, 'No diaries to export.');
+    AppSnackBar.show(context, 'No diaries to export.');
     return;
   }
 
@@ -173,7 +166,7 @@ Future<void> _exportDiaries(BuildContext context, WidgetRef ref) async {
       );
 
       if (context.mounted && result.status != ShareResultStatus.dismissed) {
-        _showSnack(context, 'Exported ${exportList.length} diaries.');
+        AppSnackBar.show(context, 'Exported ${exportList.length} diaries.');
       }
     } else {
       final uri = await FilePicker.saveFile(
@@ -186,12 +179,12 @@ Future<void> _exportDiaries(BuildContext context, WidgetRef ref) async {
       );
 
       if (uri != null && context.mounted) {
-        _showSnack(context, 'Exported ${exportList.length} diaries.');
+        AppSnackBar.show(context, 'Exported ${exportList.length} diaries.');
       }
     }
   } catch (e) {
     if (context.mounted) {
-      _showSnack(context, 'Export failed: $e');
+      AppSnackBar.show(context, 'Export failed: $e');
     }
   }
 }
@@ -211,7 +204,7 @@ Future<void> _importDiaries(BuildContext context, WidgetRef ref) async {
     final bytes = await pickedFile.readAsBytes();
     if (bytes.isEmpty) {
       if (context.mounted) {
-        _showSnack(context, 'Selected file is empty.');
+        AppSnackBar.show(context, 'Selected file is empty.');
       }
       return;
     }
@@ -221,7 +214,7 @@ Future<void> _importDiaries(BuildContext context, WidgetRef ref) async {
 
     if (count == 0) {
       if (context.mounted) {
-        _showSnack(context, 'No valid diary entries found in file.');
+        AppSnackBar.show(context, 'No valid diary entries found in file.');
       }
       return;
     }
@@ -256,11 +249,14 @@ Future<void> _importDiaries(BuildContext context, WidgetRef ref) async {
         .importFromJsonString(jsonContent);
 
     if (context.mounted) {
-      _showSnack(context, 'Successfully imported $importedCount diaries!');
+      AppSnackBar.show(
+        context,
+        'Successfully imported $importedCount diaries!',
+      );
     }
   } catch (e) {
     if (context.mounted) {
-      _showSnack(context, 'Failed to import: $e');
+      AppSnackBar.show(context, 'Failed to import: $e');
     }
   }
 }
@@ -281,14 +277,7 @@ void _clearAllDiaries(BuildContext context, WidgetRef ref) {
             final messenger = ScaffoldMessenger.of(context);
             Navigator.of(dialogContext).pop();
             await ref.read(diaryRepositoryProvider).clear();
-            messenger
-              ..clearSnackBars()
-              ..showSnackBar(
-                const SnackBar(
-                  content: Text('All diaries cleared.'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+            AppSnackBar.showWith(messenger, 'All diaries cleared.');
           },
           child: const Text('Yes'),
         ),

@@ -47,6 +47,26 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('app bar shows the weekday next to the date', (tester) async {
+    final today = DateTime(2026, 5, 20); // Wednesday
+    final tomorrow = DateTime(2026, 5, 21); // Thursday
+
+    await tester.runAsync(() async {
+      await hive.put(
+        tomorrow,
+        Diary(tomorrow, 'tomorrow entry', null, null, null),
+      );
+    });
+
+    await pumpDiary(tester, today);
+    expect(find.text('Wednesday'), findsOneWidget);
+
+    await tester.drag(find.byType(PageView), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Thursday'), findsOneWidget);
+    expect(find.text('Wednesday'), findsNothing);
+  });
+
   testWidgets('swiping moves to the next and previous day', (tester) async {
     final today = DateTime(2026, 5, 20);
     final yesterday = DateTime(2026, 5, 19);

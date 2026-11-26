@@ -280,13 +280,6 @@ void main() {
       expect(find.textContaining('per day'), findsNothing);
       expect(find.byTooltip('Previous period'), findsNothing);
 
-      expect(find.text('0'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 250));
-      expect(
-        find.descendant(of: find.byType(ScoreCard), matching: find.text('+1')),
-        findsOneWidget,
-      );
-      await tester.pump(const Duration(milliseconds: 250));
       final score = tester.widget<Text>(
         find.descendant(of: find.byType(ScoreCard), matching: find.text('+2')),
       );
@@ -303,101 +296,25 @@ void main() {
       expect(find.textContaining('Every day in this range'), findsNothing);
     });
 
-    testWidgets('counts a +1 score over the full 500ms', (tester) async {
-      final now = DateTime.now();
-      await tester.runAsync(() async {
-        await hive.put(now, _diary(now, 1));
-      });
-
-      await tester.pumpWidget(
-        hive.wrap(const MaterialApp(home: Scaffold(body: AnalyticsPage()))),
-      );
-      await tester.pump();
-
-      Finder scoreText(String text) => find.descendant(
-        of: find.byType(ScoreCard),
-        matching: find.text(text),
-      );
-
-      expect(scoreText('0'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 499));
-      expect(scoreText('0'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 1));
-      expect(scoreText('+1'), findsOneWidget);
-    });
-
-    testWidgets('respects the system reduced-motion setting', (tester) async {
-      final now = DateTime.now();
-      await tester.runAsync(() async {
-        await hive.put(now, _diary(now, 1));
-      });
-
-      tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
-          const FakeAccessibilityFeatures(disableAnimations: true);
-      addTearDown(
-        tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
-      );
-
-      await tester.pumpWidget(
-        hive.wrap(const MaterialApp(home: Scaffold(body: AnalyticsPage()))),
-      );
-      await tester.pump();
-
-      Finder scoreText(String text) => find.descendant(
-        of: find.byType(ScoreCard),
-        matching: find.text(text),
-      );
-
-      expect(scoreText('0'), findsOneWidget);
-      // Flutter compresses normal animations to 5% (25ms) when the device
-      // asks for reduced motion. The score count follows that preference.
-      await tester.pump(const Duration(milliseconds: 30));
-      expect(scoreText('+1'), findsOneWidget);
-    });
-
-    testWidgets('waits for the tab to become visible before counting', (
+    testWidgets('shows the net score immediately without counting', (
       tester,
     ) async {
       final now = DateTime.now();
       await tester.runAsync(() async {
-        await hive.put(now, _diary(now, 2));
+        await hive.put(now, _diary(now, 1));
       });
 
-      final visible = ValueNotifier(false);
-      addTearDown(visible.dispose);
-
       await tester.pumpWidget(
-        hive.wrap(
-          MaterialApp(
-            home: Scaffold(
-              body: ValueListenableBuilder<bool>(
-                valueListenable: visible,
-                builder: (context, enabled, child) =>
-                    TickerMode(enabled: enabled, child: child!),
-                child: const AnalyticsPage(),
-              ),
-            ),
-          ),
-        ),
+        hive.wrap(const MaterialApp(home: Scaffold(body: AnalyticsPage()))),
       );
       await tester.pump();
 
-      Finder scoreText(String text) => find.descendant(
-        of: find.byType(ScoreCard),
-        matching: find.text(text),
+      final score = tester.widget<Text>(
+        find.descendant(of: find.byType(ScoreCard), matching: find.text('+1')),
       );
-
-      // An inactive IndexedStack branch is kept alive but muted. Starting the
-      // controller there used to make it finish before the tab was ever shown.
-      await tester.pump(const Duration(milliseconds: 600));
-      expect(scoreText('0'), findsOneWidget);
-
-      visible.value = true;
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 250));
-      expect(scoreText('+1'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 250));
-      expect(scoreText('+2'), findsOneWidget);
+      expect(score.style?.color, Score.colors[1]);
+      // No score animation should keep scheduling frames.
+      expect(tester.binding.hasScheduledFrame, isFalse);
     });
 
     testWidgets('shows the empty lifetime state without entries', (

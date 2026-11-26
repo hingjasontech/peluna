@@ -9,6 +9,7 @@ import 'package:peluna/models/diary_model.dart';
 import 'package:peluna/providers/app_providers.dart';
 import 'package:peluna/providers/diary_providers.dart';
 import 'package:peluna/utils/utils.dart';
+import 'package:peluna/views/widgets/app_snack_bar.dart';
 import 'package:peluna/views/widgets/list_tags_widget.dart';
 import 'package:peluna/views/widgets/score_menu_widget.dart';
 import 'package:peluna/views/widgets/score_circle_widget.dart';
@@ -68,9 +69,7 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
     await _editor.save();
     if (!mounted) return;
     context.pop();
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Saved !'), duration: Duration(seconds: 1)),
-    );
+    AppSnackBar.showWith(messenger, 'Saved !');
   }
 
   /// Persists the day the user swiped away from, so moving between days never
@@ -142,7 +141,19 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
         // AppBar
         appBar: AppBar(
           centerTitle: false,
-          title: Text(dateToString(_date)),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  dateToString(_date),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _WeekdayBadge(date: _date),
+            ],
+          ),
           actionsPadding: const EdgeInsets.symmetric(horizontal: 12),
           leading: BackButton(onPressed: _save),
           actions: [
@@ -225,6 +236,34 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small pill in the app bar that names the weekday of the open day.
+class _WeekdayBadge extends StatelessWidget {
+  const _WeekdayBadge({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        weekdayName(date),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
